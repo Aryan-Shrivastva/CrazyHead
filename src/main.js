@@ -20,8 +20,8 @@ class F1PortfolioApp {
   constructor() {
     this.canvas = document.getElementById('webgl-canvas');
     this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock', 'pitstop'
-    this.lobbyPage = 1; // 1 = Team Select, 2 = Driver Select
-    this.isLaunchAllowed = false; // Locked until 5 Red Lights turn Green!
+    this.lobbyPage = 1;
+    this.isLaunchAllowed = false;
 
     this.selectedTeam = F1_TEAMS[0]; // Ferrari default
     this.selectedDriver = this.selectedTeam.drivers[0]; // Leclerc default
@@ -64,9 +64,6 @@ class F1PortfolioApp {
     // Raycaster for 3D Interactions
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-
-    // Collision Cooldown
-    this.lastCollisionTime = 0;
 
     // Controls Input State
     this.keys = {
@@ -285,7 +282,7 @@ class F1PortfolioApp {
     if (modal) {
       modal.classList.remove('hidden');
       this.soundManager.playRadioChime();
-      this.telemetryHUD.showRadioMessage('"Box box! Pit crew standing by for wing & tire service!"');
+      this.telemetryHUD.showRadioMessage('"Box box! Pit crew ready for tire change!"');
     }
   }
 
@@ -293,16 +290,10 @@ class F1PortfolioApp {
     const modal = document.getElementById('pitstop-modal');
     if (modal) modal.classList.add('hidden');
 
-    this.telemetryHUD.showRadioMessage('"Box complete! 2.4s stationary. Go Go Go!"');
+    this.telemetryHUD.showRadioMessage('"Box complete! 2.4s stop. Fresh tires fitted, Go Go Go!"');
     this.soundManager.playGearShiftSound();
 
-    // Full car repair & new tires
-    this.f1Car.repairAllDamage();
     this.physics.performPitStop(this.selectedTireCompound);
-
-    // Hide damage warnings
-    const warnBanner = document.getElementById('damage-warning-banner');
-    if (warnBanner) warnBanner.classList.add('hidden');
 
     confetti({
       particleCount: 80,
@@ -397,27 +388,21 @@ class F1PortfolioApp {
     if (this.driver2Char) this.driver2Char.group.visible = false;
     if (this.showroomPodium) this.showroomPodium.visible = false;
 
-    // 1. Build the full 20-car starting grid on Monza!
     const playerSlotIndex = 2; // P3 Grid Box
     this.gridManager.buildGrid(team, driver, playerSlotIndex);
 
-    // 2. Position Player Car on ground level in designated grid box
     const slot = this.gridManager.getPlayerGridSlot(playerSlotIndex);
     this.physics.resetPosition(slot.x, 0, slot.z, slot.heading);
-    this.f1Car.repairAllDamage();
     this.f1Car.group.position.set(slot.x, 0, slot.z);
     this.f1Car.group.rotation.set(0, slot.heading, 0);
 
-    // 3. Switch camera directly to first-person Cockpit view
     this.cameraController.setMode('cockpit');
 
-    // 4. Initialize HUD and Audio
     this.telemetryHUD.initRace(team, driver);
     this.telemetryHUD.show();
     this.soundManager.init();
     this.soundManager.resume();
 
-    // 5. Execute Real-Time 5 Red Lights to GREEN Starting Sequence in Cockpit!
     this.runCockpitStartSequence(driver);
   }
 
@@ -458,7 +443,6 @@ class F1PortfolioApp {
 
         const randomDelay = 800 + Math.random() * 600;
         setTimeout(() => {
-          // 5 RED LIGHTS TURN GREEN!
           lightPods.forEach(p => {
             if (p) {
               p.classList.remove('red-on');
@@ -483,51 +467,12 @@ class F1PortfolioApp {
 
           this.telemetryHUD.showRadioMessage(`"Lights out, push to pass, ${driver.name}!"`);
 
-          // Start Gantry disappears cleanly within 600ms of green lights!
           setTimeout(() => {
             gantryEl.classList.add('hidden');
           }, 600);
         }, randomDelay);
       }
     }, 650);
-  }
-
-  handleCarCollision(hitZone, impactDir, aiCar) {
-    if (!this.isLaunchAllowed) return;
-    const currentSpeed = this.physics.velocity.length();
-    if (currentSpeed < 3.0) return;
-
-    const now = Date.now();
-    if (now - this.lastCollisionTime < 700) return;
-    this.lastCollisionTime = now;
-
-    this.physics.applyCollisionImpulse(impactDir, 0.8);
-
-    const brokenPart = this.f1Car.triggerDamage(hitZone);
-    if (brokenPart === 'FRONT_WING') {
-      this.physics.frontWingDamaged = true;
-    }
-
-    this.soundManager.playGearShiftSound();
-
-    const warnBanner = document.getElementById('damage-warning-banner');
-    const warnText = document.getElementById('damage-text');
-    if (warnBanner && warnText) {
-      if (brokenPart === 'FRONT_WING') {
-        warnText.textContent = 'FRONT WING DAMAGED - HIGH-SPEED DOWNFORCE REDUCED! [B] BOX FOR REPAIRS';
-      } else if (brokenPart === 'LEFT_MIRROR' || brokenPart === 'RIGHT_MIRROR') {
-        warnText.textContent = 'SIDE MIRROR SNAPPED OFF!';
-      } else if (brokenPart === 'REAR_WING') {
-        warnText.textContent = 'REAR WING IMPACT DETECTED!';
-      } else {
-        warnText.textContent = 'BODYWORK CONTACT!';
-      }
-
-      warnBanner.classList.remove('hidden');
-      setTimeout(() => {
-        warnBanner.classList.add('hidden');
-      }, 3500);
-    }
   }
 
   openPaddock() {
@@ -562,7 +507,6 @@ class F1PortfolioApp {
     this.telemetryHUD.hide();
     this.paddockHUD.hide();
     this.gridManager.clearGrid();
-    this.f1Car.repairAllDamage();
 
     const gantryEl = document.getElementById('cockpit-start-gantry');
     if (gantryEl) gantryEl.classList.add('hidden');
@@ -706,9 +650,8 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      this.gridManager.update(dt, this.physics, (hitZone, impactDir, aiCar) => {
-        this.handleCarCollision(hitZone, impactDir, aiCar);
-      });
+      // Update AI Cars with 300 km/h straights & 30% corner speed reduction
+      this.gridManager.update(dt);
 
       this.telemetryHUD.update(this.physics, this.monzaTrack);
 

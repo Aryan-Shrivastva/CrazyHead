@@ -4,7 +4,7 @@ import { F1Car } from '../vehicle/F1Car.js';
 
 /**
  * Starting Grid Manager: Generates 20 F1 Cars on the Monza Grid in Official Staggered Order
- * Features realistic launch sequence, balanced F1 racing pace, and car-to-car collision detection.
+ * Features authentic racing pace: 0 km/h start -> 300 km/h on straights -> 30% speed (85-100 km/h) in corners.
  */
 export class GridManager {
   constructor(scene, monzaTrack) {
@@ -19,18 +19,16 @@ export class GridManager {
 
   calculateGridSlots() {
     // 20 Staggered starting grid boxes along the Rettifilo main straight
-    // Start finish line is at curve progress u = 0 (x ~ 135, z ~ 0)
-    const rowGap = 10.0;
-    const xOffset = 2.8;
+    const rowGap = 12.0;
+    const xOffset = 3.2;
 
     for (let i = 0; i < 20; i++) {
       const isLeft = i % 2 === 0;
       const x = 135 + (i * rowGap * 0.45);
       const lateral = isLeft ? -xOffset : xOffset;
       const z = lateral;
-      // Heading pointing towards Turn 1 (-X direction)
       const heading = -Math.PI / 2;
-      this.gridSlots.push({ pos: i + 1, x, y: 0.05, z, heading });
+      this.gridSlots.push({ pos: i + 1, x, y: 0, z, heading });
     }
   }
 
@@ -59,7 +57,7 @@ export class GridManager {
         const slot = this.gridSlots[slotIndex];
 
         const aiCar = new F1Car(rival.team);
-        aiCar.group.position.set(slot.x, slot.y, slot.z);
+        aiCar.group.position.set(slot.x, 0, slot.z);
         aiCar.group.rotation.y = slot.heading;
 
         this.scene.add(aiCar.group);
@@ -71,11 +69,11 @@ export class GridManager {
           team: rival.team,
           driver: rival.driver,
           slot: slotIndex + 1,
-          position: new THREE.Vector3(slot.x, slot.y, slot.z),
+          position: new THREE.Vector3(slot.x, 0, slot.z),
           progress: nearest.u || 0.01,
-          speed: 0, // Starts at 0 km/h on the grid
-          baseTargetSpeed: 64 + (20 - slotIndex) * 0.5 + Math.random() * 3, // ~230 - 270 km/h balanced F1 pace!
-          collisionRadius: 2.2
+          speedKmH: 0, // Starts at 0 km/h on grid
+          topStraightSpeed: 295 + Math.random() * 10, // ~300 km/h on straights
+          cornerSpeed: 85 + Math.random() * 15 // ~30% speed (85-100 km/h) in turns
         });
 
         rivalIndex++;
@@ -91,72 +89,50 @@ export class GridManager {
     this.isRaceStarted = true;
   }
 
-  update(dt, playerPhysics, onCollisionCallback = null) {
+  update(dt) {
     if (!this.monzaTrack || !this.monzaTrack.curve) return;
 
     if (!this.isRaceStarted) {
-      // Pre-race idle revving on grid
-      const t = Date.now() * 0.01;
-      this.gridCars.forEach((item, idx) => {
-        item.car.group.position.y = 0.05 + Math.sin(t + idx) * 0.002;
-      });
       return;
     }
 
-    const playerPos = playerPhysics.position;
-
     this.gridCars.forEach((ai, idx) => {
-      // Dynamic Corner Braking vs Straight Speed
-      let targetSpeed = ai.baseTargetSpeed;
       const p = ai.progress;
 
-      // Braking zones for Variante del Rettifilo, Roggia, Lesmo, Ascari, and Parabolica
-      if ((p > 0.08 && p < 0.14) || (p > 0.28 && p < 0.35) || (p > 0.62 && p < 0.70) || (p > 0.88 && p < 0.98)) {
-        targetSpeed = ai.baseTargetSpeed * 0.58; // Realistic corner entry braking
-      }
+      // Check if car is approaching or inside a corner/turn along the Monza circuit:
+      // Turn 1/2 Chicane (0.08 - 0.16), Roggia (0.28 - 0.36), Lesmo 1 & 2 (0.42 - 0.52),
+      // Ascari Chicane (0.64 - 0.72), Parabolica (0.86 - 0.98)
+      const isCorner = (p >= 0.08 && p <= 0.16) ||
+                       (p >= 0.28 && p <= 0.36) ||
+                       (p >= 0.42 && p <= 0.52) ||
+                       (p >= 0.64 && p <= 0.72) ||
+                       (p >= 0.86 && p <= 0.98);
 
-      // Smooth acceleration curve off the starting line
-      ai.speed = THREE.MathUtils.lerp(ai.speed, targetSpeed, dt * 0.55);
+      // Target speed: 300 km/h on straights, 30% (85-100 km/h) in corners
+      const targetSpeedKmH = isCorner ? ai.cornerSpeed : ai.topStraightSpeed;
 
-      // Advance along Monza spline
-      ai.progress += (ai.speed * dt) / 2800;
+      // Smooth acceleration & braking transitions
+      const rate = isCorner ? 1.6 : 0.65; // Decelerates smoothly into corners, builds up to 300 km/h on straights
+      ai.speedKmH = THREE.MathUtils.lerp(ai.speedKmH, targetSpeedKmH, dt * rate);
+
+      // Convert km/h to m/s for spline progression
+      const speedMS = ai.speedKmH / 3.6;
+      ai.progress += (speedMS * dt) / 2800;
       if (ai.progress > 1) ai.progress -= 1;
 
       const pt = this.monzaTrack.curve.getPointAt(ai.progress);
       const tangent = this.monzaTrack.curve.getTangentAt(ai.progress);
       const heading = Math.atan2(tangent.x, tangent.z);
 
-      const laneOffset = ((idx % 3) - 1) * 2.2;
+      const laneOffset = ((idx % 3) - 1) * 3.5;
       const right = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize();
 
       ai.position.copy(pt).addScaledVector(right, laneOffset);
-      ai.car.group.position.set(ai.position.x, 0.05, ai.position.z);
+      ai.car.group.position.set(ai.position.x, 0, ai.position.z);
       ai.car.group.rotation.y = heading;
 
       // Wheel rotation
-      ai.car.update(0, ai.speed / 50, false);
-
-      // 3. COLLISION DETECTION WITH PLAYER CAR
-      if (playerPos) {
-        const dist = ai.position.distanceTo(playerPos);
-        if (dist < 3.2) {
-          // Impact occurred!
-          const impactDir = playerPos.clone().sub(ai.position).normalize();
-          
-          // Determine impact zone (Front, Rear, Side)
-          const playerForward = new THREE.Vector3(Math.sin(playerPhysics.heading), 0, Math.cos(playerPhysics.heading));
-          const dot = playerForward.dot(impactDir.clone().negate());
-
-          let hitZone = 'side';
-          if (dot > 0.5) hitZone = 'front';
-          else if (dot < -0.5) hitZone = 'rear';
-          else hitZone = impactDir.x > 0 ? 'right' : 'left';
-
-          if (onCollisionCallback) {
-            onCollisionCallback(hitZone, impactDir, ai);
-          }
-        }
-      }
+      ai.car.update(0, speedMS / 40, false);
     });
   }
 
