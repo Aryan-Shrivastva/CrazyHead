@@ -90,6 +90,10 @@ html, body {
   transform: scale(0.98);
 }
 
+.stage-section.hidden, .stage-bottom-group.hidden {
+  display: none !important;
+}
+
 /* Sound Button */
 .sound-btn {
   position: fixed;
@@ -119,7 +123,7 @@ html, body {
 }
 
 /* ==========================================================================
-   F1 OFFICIAL CAREER LOBBY SCREEN (MATCHING REFERENCE IMAGE)
+   LOBBY SCREEN: STAGE 1 (TEAM SELECT) & STAGE 2 (DRIVER CAREER)
    ========================================================================== */
 
 .f1-career-lobby {
@@ -130,7 +134,7 @@ html, body {
   background: transparent;
 }
 
-/* Top-Left: Team Title & Metadata */
+/* STAGE 1: Team Title & Metadata */
 .team-header-panel {
   display: flex;
   flex-direction: column;
@@ -190,7 +194,7 @@ html, body {
   color: #FFF;
 }
 
-/* Top-Right: Driver Comparison & Team Perks */
+/* STAGE 1: Top-Right Driver Comparison & Team Perks */
 .team-intel-panel {
   position: absolute;
   top: 36px;
@@ -202,7 +206,6 @@ html, body {
   z-index: 20;
 }
 
-/* Drivers Comparison Split Bar */
 .driver-comparison-card {
   background: rgba(14, 18, 26, 0.88);
   border: 1px solid var(--f1-border);
@@ -290,7 +293,7 @@ html, body {
   transition: width 0.4s ease;
 }
 
-/* Team Perks Table (Matching Photo) */
+/* Team Perks Table */
 .team-perks-card {
   background: rgba(14, 18, 26, 0.88);
   border: 1px solid var(--f1-border);
@@ -345,16 +348,98 @@ html, body {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Bottom Controls & Carbon Ribbon */
+/* ==========================================================================
+   STAGE 2: DRIVER CAREER / CONFIRM SETTINGS (MATCHING ATTACHED PHOTO)
+   ========================================================================== */
+
+.driver-career-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+
+.driver-career-pill {
+  align-self: flex-start;
+  background: var(--f1-red);
+  color: #FFF;
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.confirm-settings-title {
+  font-family: var(--font-telemetry);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #FFF;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  padding: 6px 20px;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  width: fit-content;
+}
+
+.driver-select-hint {
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  color: var(--f1-muted);
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.selected-driver-spec-card {
+  position: absolute;
+  top: 36px;
+  right: 48px;
+  background: rgba(14, 18, 26, 0.9);
+  border: 1px solid var(--f1-border);
+  padding: 14px 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+.driver-lead-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #FFF;
+}
+
+.driver-lead-stats {
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  color: var(--f1-yellow);
+  letter-spacing: 1px;
+}
+
+/* Bottom Bar */
 .lobby-bottom-bar {
+  display: flex;
+  width: 100%;
+  z-index: 20;
+}
+
+.stage-bottom-group {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 20;
+  width: 100%;
   gap: 20px;
 }
 
-/* Horizontal Team Carbon Ribbon (Exact match to F1 Game Tiles) */
+/* Horizontal Team Carbon Ribbon */
 .team-carbon-ribbon {
   display: flex;
   gap: 12px;
@@ -419,35 +504,70 @@ html, body {
   color: #FFF;
 }
 
-/* Action Button & 5 Red Lights */
-.lobby-action-group {
+/* Stage 2 Driver Toggles */
+.driver-switch-toggles {
+  display: flex;
+  gap: 12px;
+}
+
+.driver-switch-pill {
+  background: rgba(14, 18, 26, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #FFF;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--font-telemetry);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.f1-lights-gantry.mini {
+.driver-switch-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.driver-switch-pill.selected {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: var(--f1-yellow);
+  box-shadow: 0 0 16px rgba(255, 242, 0, 0.3);
+}
+
+.f1-back-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #FFF;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: var(--font-telemetry);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
   display: flex;
-  gap: 6px;
-  background: #000;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 2px solid #222;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.f1-lights-gantry.mini .gantry-light {
-  width: 14px;
-  height: 14px;
+.f1-back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-back-glyph {
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #2a0000;
-  border: 1px solid #440000;
-  transition: all 0.1s ease;
-}
-
-.f1-lights-gantry.mini .gantry-light.on {
-  background: #FF0000;
-  box-shadow: 0 0 12px #FF0000, 0 0 20px #FF2222;
-  border-color: #FFAAAA;
+  background: #FF3B30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .f1-continue-btn {
@@ -474,6 +594,16 @@ html, body {
   background: linear-gradient(135deg, #FF1A14 0%, var(--f1-red) 100%);
 }
 
+.f1-continue-btn.highlight {
+  background: linear-gradient(135deg, #34C759 0%, #248A3D 100%);
+  box-shadow: 0 6px 24px rgba(52, 199, 89, 0.45);
+}
+
+.f1-continue-btn.highlight:hover {
+  background: linear-gradient(135deg, #38E065 0%, #29A045 100%);
+  box-shadow: 0 8px 32px rgba(52, 199, 89, 0.65);
+}
+
 .btn-controller-glyph {
   width: 24px;
   height: 24px;
@@ -497,12 +627,12 @@ html, body {
   justify-content: space-between;
 }
 
-/* Top Left: Leaderboard Tower */
 .f1-leaderboard-tower {
   position: absolute;
   top: 20px;
   left: 20px;
   width: 230px;
+  max-height: calc(100vh - 220px);
   background: rgba(10, 14, 20, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
@@ -510,6 +640,8 @@ html, body {
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   pointer-events: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .tower-header {
@@ -562,15 +694,23 @@ html, body {
 .tower-drivers {
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+
+.tower-drivers::-webkit-scrollbar {
+  width: 3px;
+}
+.tower-drivers::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .tower-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -587,7 +727,7 @@ html, body {
 
 .tower-pos {
   font-family: var(--font-telemetry);
-  font-size: 11px;
+  font-size: 10px;
   width: 14px;
   color: var(--f1-muted);
 }
@@ -607,17 +747,17 @@ html, body {
   align-items: center;
   gap: 6px;
   font-family: var(--font-telemetry);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .tire-badge {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
   color: #FFF;
 }
@@ -1090,7 +1230,6 @@ html, body {
   padding: 12px 0;
 }
 
-/* Monitor Shell */
 .paddock-monitor {
   display: flex;
   flex-direction: column;
@@ -1149,7 +1288,6 @@ html, body {
 .dot.yellow { background: #FFBD2E; }
 .dot.green { background: #27C93F; }
 
-/* Monitor 1: Profiles Grid */
 .profile-cards-grid {
   padding: 16px;
   overflow-y: auto;
@@ -1253,7 +1391,6 @@ html, body {
 .tag.brown { color: #D4A373; background: rgba(212, 163, 115, 0.15); }
 .tag.blue { color: #64C4FF; background: rgba(100, 196, 255, 0.15); }
 
-/* Monitor 2: Portfolio OS Browser */
 .os-tabs-bar {
   display: flex;
   background: #0B0E14;
@@ -1322,7 +1459,6 @@ html, body {
   margin-top: 2px;
 }
 
-/* Projects Grid */
 .projects-list-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1412,7 +1548,6 @@ html, body {
   background: #FF2B24;
 }
 
-/* About Tab */
 .about-content-box {
   display: flex;
   flex-direction: column;
@@ -1456,7 +1591,6 @@ html, body {
   text-align: center;
 }
 
-/* Skills Tab */
 .skills-category-group {
   display: flex;
   flex-direction: column;
@@ -1494,7 +1628,6 @@ html, body {
   background: rgba(0, 210, 190, 0.1);
 }
 
-/* Contact Tab */
 .contact-card-box {
   display: flex;
   flex-direction: column;

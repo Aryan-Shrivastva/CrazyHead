@@ -2,23 +2,38 @@ import confetti from 'canvas-confetti';
 import { F1_TEAMS } from '../data/teams.js';
 
 /**
- * Official F1 Career Mode Team Selection Lobby (Matching Reference Image)
+ * Two-Stage Lobby Controller:
+ * Stage 1: Team Selection Ribbon
+ * Stage 2: Driver Career / Confirm Settings (Driver in front of Car)
  */
 export class LobbyUI {
-  constructor(onStartRace, onTeamChange, soundManager) {
+  constructor(onStartRace, onTeamChange, onDriverChange, soundManager) {
     this.onStartRace = onStartRace;
     this.onTeamChange = onTeamChange;
+    this.onDriverChange = onDriverChange;
     this.soundManager = soundManager;
 
     this.selectedTeam = F1_TEAMS[0]; // Default Ferrari
     this.selectedDriver = this.selectedTeam.drivers[0]; // Default Leclerc
+    this.currentStage = 1; // 1 = Team Select, 2 = Driver Career
 
     this.screenElement = document.getElementById('lobby-screen');
+    this.stage1Header = document.getElementById('stage-1-header');
+    this.stage2Header = document.getElementById('stage-2-header');
+    this.stage1Bottom = document.getElementById('stage-1-bottom');
+    this.stage2Bottom = document.getElementById('stage-2-bottom');
+
     this.ribbonEl = document.getElementById('team-carbon-ribbon');
     this.teamTitleEl = document.getElementById('lobby-team-title');
     this.driverCompCardEl = document.getElementById('driver-comparison-card');
     this.perksListEl = document.getElementById('lobby-perks-list');
+
+    this.gotoDriverBtn = document.getElementById('goto-driver-btn');
+    this.backToTeamBtn = document.getElementById('back-to-team-btn');
     this.startBtn = document.getElementById('start-race-btn');
+    this.driverSwitchToggles = document.getElementById('driver-switch-toggles');
+    this.leadDriverName = document.getElementById('lead-driver-name');
+    this.leadDriverStats = document.getElementById('lead-driver-stats');
     this.ambientWaves = document.getElementById('showroom-ambient-waves');
 
     // Metadata Elements
@@ -67,8 +82,55 @@ export class LobbyUI {
     this.updateTeamDetails();
 
     if (this.onTeamChange) {
-      this.onTeamChange(this.selectedTeam);
+      this.onTeamChange(this.selectedTeam, this.selectedDriver);
     }
+  }
+
+  setStage(stage) {
+    this.currentStage = stage;
+    if (stage === 1) {
+      if (this.stage1Header) this.stage1Header.classList.remove('hidden');
+      if (this.stage2Header) this.stage2Header.classList.add('hidden');
+      if (this.stage1Bottom) this.stage1Bottom.classList.remove('hidden');
+      if (this.stage2Bottom) this.stage2Bottom.classList.add('hidden');
+    } else {
+      if (this.stage1Header) this.stage1Header.classList.add('hidden');
+      if (this.stage2Header) this.stage2Header.classList.remove('hidden');
+      if (this.stage1Bottom) this.stage1Bottom.classList.add('hidden');
+      if (this.stage2Bottom) this.stage2Bottom.classList.remove('hidden');
+      this.renderDriverToggles();
+    }
+  }
+
+  selectDriver(driver) {
+    this.selectedDriver = driver;
+    this.updateTeamDetails();
+    this.renderDriverToggles();
+
+    if (this.onDriverChange) {
+      this.onDriverChange(this.selectedDriver);
+    }
+  }
+
+  renderDriverToggles() {
+    if (!this.driverSwitchToggles) return;
+    this.driverSwitchToggles.innerHTML = '';
+
+    this.selectedTeam.drivers.forEach(driver => {
+      const btn = document.createElement('button');
+      btn.className = `driver-switch-pill ${driver.id === this.selectedDriver.id ? 'selected' : ''}`;
+      btn.innerHTML = `
+        <span>${driver.flag}</span>
+        <span>${driver.name}</span>
+        <span style="color: var(--f1-yellow); font-size: 11px;">#${driver.number}</span>
+      `;
+
+      btn.addEventListener('click', () => {
+        this.selectDriver(driver);
+      });
+
+      this.driverSwitchToggles.appendChild(btn);
+    });
   }
 
   updateTeamDetails() {
@@ -79,19 +141,24 @@ export class LobbyUI {
     if (this.metaBase) this.metaBase.textContent = this.selectedTeam.base;
     if (this.metaEngine) this.metaEngine.textContent = this.selectedTeam.engineSupplier;
 
-    // 2. Ambient Wave Color
+    // 2. Stage 2 Lead Driver Banner
+    if (this.leadDriverName) this.leadDriverName.textContent = this.selectedDriver.name;
+    if (this.leadDriverStats) {
+      this.leadDriverStats.textContent = `#${this.selectedDriver.number} • ${this.selectedDriver.flag} • ${this.selectedDriver.wins} WINS • ${this.selectedDriver.podiums} PODIUMS`;
+    }
+
+    // 3. Ambient Wave Color
     if (this.ambientWaves) {
       this.ambientWaves.style.setProperty('--ambient-wave-color', `${this.selectedTeam.color}44`);
     }
 
-    // 3. Driver Comparison Split Card (Matching Reference Photo)
+    // 4. Driver Comparison Split Card (Stage 1)
     if (this.driverCompCardEl) {
       const d1 = this.selectedTeam.drivers[0];
       const d2 = this.selectedTeam.drivers[1];
 
       this.driverCompCardEl.innerHTML = `
         <div class="driver-split-row">
-          <!-- Driver 1 -->
           <div class="driver-side ${this.selectedDriver.id === d1.id ? 'selected' : ''}" id="driver-side-1">
             <div class="driver-name-tag">${d1.name} <span class="driver-percent">${d1.share || '50%'}</span></div>
             <div class="driver-badges-strip">
@@ -100,12 +167,10 @@ export class LobbyUI {
             </div>
           </div>
 
-          <!-- Inc. Bonus Pill -->
           <div class="f1-stat-badge" style="background: rgba(175, 82, 222, 0.3); color: #DDA0DD; border: 1px solid rgba(175,82,222,0.4);">
             Inc. 2% Bonus
           </div>
 
-          <!-- Driver 2 -->
           <div class="driver-side ${this.selectedDriver.id === d2.id ? 'selected' : ''}" id="driver-side-2" style="text-align: right; align-items: flex-end;">
             <div class="driver-name-tag"><span class="driver-percent">${d2.share || '50%'}</span> ${d2.name}</div>
             <div class="driver-badges-strip">
@@ -115,31 +180,19 @@ export class LobbyUI {
           </div>
         </div>
 
-        <!-- Split Progress Bar -->
         <div class="driver-split-bar" style="--team-color: ${this.selectedTeam.color}">
           <div class="split-fill-left" style="width: ${d1.share || '50%'}"></div>
           <div class="split-fill-right" style="width: ${d2.share || '50%'}"></div>
         </div>
       `;
 
-      // Add click listeners to switch active driver
       const side1 = document.getElementById('driver-side-1');
       const side2 = document.getElementById('driver-side-2');
-      if (side1) {
-        side1.addEventListener('click', () => {
-          this.selectedDriver = d1;
-          this.updateTeamDetails();
-        });
-      }
-      if (side2) {
-        side2.addEventListener('click', () => {
-          this.selectedDriver = d2;
-          this.updateTeamDetails();
-        });
-      }
+      if (side1) side1.addEventListener('click', () => this.selectDriver(d1));
+      if (side2) side2.addEventListener('click', () => this.selectDriver(d2));
     }
 
-    // 4. Perks Table (Matching Photo)
+    // 5. Perks Table (Stage 1)
     if (this.perksListEl) {
       this.perksListEl.innerHTML = '';
       (this.selectedTeam.perks || []).forEach(perk => {
@@ -155,6 +208,20 @@ export class LobbyUI {
   }
 
   setupListeners() {
+    if (this.gotoDriverBtn) {
+      this.gotoDriverBtn.addEventListener('click', () => {
+        this.setStage(2);
+        if (this.onTeamChange) this.onTeamChange(this.selectedTeam, this.selectedDriver, 2);
+      });
+    }
+
+    if (this.backToTeamBtn) {
+      this.backToTeamBtn.addEventListener('click', () => {
+        this.setStage(1);
+        if (this.onTeamChange) this.onTeamChange(this.selectedTeam, this.selectedDriver, 1);
+      });
+    }
+
     if (this.startBtn) {
       this.startBtn.addEventListener('click', () => {
         this.triggerLightsOutSequence();
@@ -190,7 +257,7 @@ export class LobbyUI {
           if (this.soundManager) this.soundManager.playGantryLightBeep(true);
 
           confetti({
-            particleCount: 120,
+            particleCount: 130,
             spread: 90,
             origin: { y: 0.6 }
           });
@@ -212,6 +279,7 @@ export class LobbyUI {
     if (this.ambientWaves) this.ambientWaves.style.display = 'block';
     this.startBtn.disabled = false;
     this.startBtn.style.opacity = '1';
+    this.setStage(1);
   }
 
   hide() {

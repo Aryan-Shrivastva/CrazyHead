@@ -1,7 +1,10 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { F1_TEAMS } from './data/teams.js';
 import { MonzaTrack } from './world/MonzaTrack.js';
 import { F1Car } from './vehicle/F1Car.js';
+import { DriverCharacter } from './vehicle/DriverCharacter.js';
+import { GridManager } from './world/GridManager.js';
 import { VehiclePhysics } from './vehicle/VehiclePhysics.js';
 import { CameraController } from './vehicle/CameraController.js';
 import { SoundManager } from './audio/SoundManager.js';
@@ -16,6 +19,7 @@ class F1PortfolioApp {
   constructor() {
     this.canvas = document.getElementById('webgl-canvas');
     this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock'
+    this.lobbyStage = 1; // 1 = Team Select, 2 = Driver Career
 
     this.selectedTeam = F1_TEAMS[0];
     this.selectedDriver = this.selectedTeam.drivers[0];
@@ -35,6 +39,9 @@ class F1PortfolioApp {
     this.soundManager = new SoundManager();
     this.monzaTrack = null;
     this.f1Car = null;
+    this.driver1Char = null; // 3D Driver 1
+    this.driver2Char = null; // 3D Driver 2 (Teammate)
+    this.gridManager = null; // 20-car grid manager
     this.physics = new VehiclePhysics();
     this.cameraController = null;
 
@@ -73,8 +80,8 @@ class F1PortfolioApp {
 
   setupThreeScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0A0E14);
-    this.scene.fog = new THREE.FogExp2(0x0A0E14, 0.0018);
+    this.scene.background = new THREE.Color(0x080A0F);
+    this.scene.fog = new THREE.FogExp2(0x080A0F, 0.0016);
 
     this.camera = new THREE.PerspectiveCamera(
       45,
@@ -93,7 +100,7 @@ class F1PortfolioApp {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.15;
 
     this.cameraController = new CameraController(this.camera, this.renderer.domElement);
 
@@ -101,12 +108,10 @@ class F1PortfolioApp {
   }
 
   setupLighting() {
-    // Ambient Hemisphere Light
-    this.hemiLight = new THREE.HemisphereLight(0xEBF4FF, 0x1E2B1E, 0.65);
+    this.hemiLight = new THREE.HemisphereLight(0xEBF4FF, 0x1A251A, 0.7);
     this.scene.add(this.hemiLight);
 
-    // Directional Sun Light
-    this.dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.4);
+    this.dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
     this.dirLight.position.set(120, 200, 100);
     this.dirLight.castShadow = true;
     this.dirLight.shadow.mapSize.width = 2048;
@@ -119,34 +124,47 @@ class F1PortfolioApp {
     this.dirLight.shadow.camera.bottom = -150;
     this.scene.add(this.dirLight);
 
-    // Showroom Spotlight
-    this.showroomSpotlight = new THREE.SpotLight(0xFFFFFF, 3.0, 30, Math.PI / 4, 0.5);
-    this.showroomSpotlight.position.set(0, 8, 4);
+    this.showroomSpotlight = new THREE.SpotLight(0xFFFFFF, 3.5, 35, Math.PI / 3.5, 0.4);
+    this.showroomSpotlight.position.set(-1, 7, 5);
     this.showroomSpotlight.castShadow = true;
     this.scene.add(this.showroomSpotlight);
   }
 
   buildWorld() {
-    // Build 3D Monza Circuit
+    // 1. Build 3D Monza Circuit
     this.monzaTrack = new MonzaTrack(this.scene);
 
-    // Build 3D F1 Car
+    // 2. Build 20-Car Grid Manager
+    this.gridManager = new GridManager(this.scene, this.monzaTrack);
+
+    // 3. Build Player 3D F1 Car
     this.f1Car = new F1Car(this.selectedTeam);
     this.scene.add(this.f1Car.group);
-
-    // Position car on showroom podium initially
     this.f1Car.group.position.set(0, 0, 0);
+
+    // 4. Build 3D Drivers in Showroom (Matching User's Photo!)
+    const d1 = this.selectedTeam.drivers[0];
+    const d2 = this.selectedTeam.drivers[1];
+
+    this.driver1Char = new DriverCharacter(d1, this.selectedTeam, true);
+    this.driver1Char.group.position.set(-0.65, 0, 2.0); // Foreground front
+    this.driver1Char.group.rotation.y = 0.15;
+    this.scene.add(this.driver1Char.group);
+
+    this.driver2Char = new DriverCharacter(d2, this.selectedTeam, false);
+    this.driver2Char.group.position.set(1.9, 0, 0.6); // Midground right
+    this.driver2Char.group.rotation.y = -0.25;
+    this.scene.add(this.driver2Char.group);
   }
 
   setupUI() {
-    // 1. Lobby UI
     this.lobbyUI = new LobbyUI(
       (team, driver) => this.startRace(team, driver),
-      (team) => this.onTeamChange(team),
+      (team, driver, stage) => this.onTeamChange(team, driver, stage),
+      (driver) => this.onDriverChange(driver),
       this.soundManager
     );
 
-    // 2. Telemetry HUD
     this.telemetryHUD = new TelemetryHUD({
       onOpenPaddock: () => this.openPaddock(),
       onToggleCamera: () => this.cameraController.toggleCameraMode(),
@@ -154,7 +172,6 @@ class F1PortfolioApp {
       onReturnLobby: () => this.returnToLobby()
     });
 
-    // 3. Paddock HUD
     this.paddockHUD = new PaddockHUD(() => this.returnToCockpit());
   }
 
@@ -174,14 +191,56 @@ class F1PortfolioApp {
     }
   }
 
-  onTeamChange(team) {
+  onTeamChange(team, driver, stage = 1) {
     this.selectedTeam = team;
+    this.selectedDriver = driver || team.drivers[0];
+    this.lobbyStage = stage;
+
+    // Update car livery
     this.f1Car.updateTeam(team);
     this.paddockHUD.updateTeam(team);
 
     // Update showroom spotlight color
     if (this.showroomSpotlight) {
       this.showroomSpotlight.color.set(team.color);
+    }
+
+    // Update 3D drivers appearance
+    const d1 = team.drivers[0];
+    const d2 = team.drivers[1];
+    if (this.driver1Char) this.driver1Char.updateTeamAndDriver(d1, team);
+    if (this.driver2Char) this.driver2Char.updateTeamAndDriver(d2, team);
+
+    this.syncDriverPositions();
+  }
+
+  onDriverChange(driver) {
+    this.selectedDriver = driver;
+    this.syncDriverPositions();
+  }
+
+  syncDriverPositions() {
+    if (!this.driver1Char || !this.driver2Char) return;
+
+    const isDriver1Lead = this.selectedDriver.id === this.selectedTeam.drivers[0].id;
+
+    // Foreground Lead Position: (x: -0.65, y: 0, z: 2.1)
+    // Midground Teammate Position: (x: 1.9, y: 0, z: 0.6)
+    const posFront = { x: -0.65, y: 0, z: 2.1, rotY: 0.15 };
+    const posBack = { x: 1.9, y: 0, z: 0.6, rotY: -0.25 };
+
+    if (isDriver1Lead) {
+      gsap.to(this.driver1Char.group.position, { ...posFront, duration: 0.6, ease: 'power2.out' });
+      gsap.to(this.driver1Char.group.rotation, { y: posFront.rotY, duration: 0.6 });
+
+      gsap.to(this.driver2Char.group.position, { ...posBack, duration: 0.6, ease: 'power2.out' });
+      gsap.to(this.driver2Char.group.rotation, { y: posBack.rotY, duration: 0.6 });
+    } else {
+      gsap.to(this.driver2Char.group.position, { ...posFront, duration: 0.6, ease: 'power2.out' });
+      gsap.to(this.driver2Char.group.rotation, { y: posFront.rotY, duration: 0.6 });
+
+      gsap.to(this.driver1Char.group.position, { ...posBack, duration: 0.6, ease: 'power2.out' });
+      gsap.to(this.driver1Char.group.rotation, { y: posBack.rotY, duration: 0.6 });
     }
   }
 
@@ -190,22 +249,32 @@ class F1PortfolioApp {
     this.selectedDriver = driver;
     this.gameState = 'racing';
 
-    // Position car on Monza Starting Grid (Main Straight facing Turn 1)
-    this.physics.resetPosition(0, 0.05, 50, 0); // Heading 0 points down the straight
+    // Hide showroom 3D drivers
+    if (this.driver1Char) this.driver1Char.group.visible = false;
+    if (this.driver2Char) this.driver2Char.group.visible = false;
+
+    // 1. Build the full 20-car starting grid on Monza!
+    const playerSlotIndex = 2; // P3 Grid Box
+    this.gridManager.buildGrid(team, driver, playerSlotIndex);
+
+    // 2. Position Player Car in their designated grid box
+    const slot = this.gridManager.getPlayerGridSlot(playerSlotIndex);
+    this.physics.resetPosition(slot.x, slot.y, slot.z, slot.heading);
     this.f1Car.group.position.copy(this.physics.position);
     this.f1Car.group.rotation.y = this.physics.heading;
 
-    // Switch camera to first-person Cockpit Halo view (Mode index 0)
+    // 3. Switch camera to first-person Cockpit Halo view (Matching reference photo!)
     this.cameraController.setMode('cockpit');
 
-    // Initialize HUD and sound
+    // 4. Initialize HUD and audio
     this.telemetryHUD.initRace(team, driver);
     this.telemetryHUD.show();
     this.soundManager.init();
     this.soundManager.resume();
 
-    // Show radio message
-    this.telemetryHUD.showRadioMessage(`"Green flag, ${driver.name}! Push to pass enabled."`);
+    // Launch AI cars
+    this.gridManager.startRace();
+    this.telemetryHUD.showRadioMessage(`"20 cars on the grid! Lights out, push to pass, ${driver.name}!"`);
   }
 
   openPaddock() {
@@ -215,7 +284,6 @@ class F1PortfolioApp {
     this.soundManager.playRadioChime();
     this.telemetryHUD.hide();
 
-    // Smooth camera transition into Paddock Hospitality Suite
     this.cameraController.transitionToPaddock(() => {
       this.paddockHUD.show();
     });
@@ -240,11 +308,17 @@ class F1PortfolioApp {
     this.gameState = 'lobby';
     this.telemetryHUD.hide();
     this.paddockHUD.hide();
+    this.gridManager.clearGrid();
+
+    if (this.driver1Char) this.driver1Char.group.visible = true;
+    if (this.driver2Char) this.driver2Char.group.visible = true;
+
     this.lobbyUI.show();
     this.cameraController.setMode('showroom');
     this.physics.resetPosition(0, 0, 0, 0);
     this.f1Car.group.position.set(0, 0, 0);
     this.f1Car.group.rotation.set(0, 0, 0);
+    this.syncDriverPositions();
   }
 
   resetCarToTrack() {
@@ -257,7 +331,6 @@ class F1PortfolioApp {
   }
 
   setupInputListeners() {
-    // Keyboard inputs
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
       if (['w', 'arrowup'].includes(key)) this.keys.forward = true;
@@ -266,7 +339,6 @@ class F1PortfolioApp {
       if (['d', 'arrowright'].includes(key)) this.keys.right = true;
       if (e.code === 'Space') this.keys.boost = true;
 
-      // Shortcuts
       if (key === 'c' && this.gameState === 'racing') {
         const mode = this.cameraController.toggleCameraMode();
         if (this.telemetryHUD.camNameText) this.telemetryHUD.camNameText.textContent = mode;
@@ -289,7 +361,7 @@ class F1PortfolioApp {
       if (e.code === 'Space') this.keys.boost = false;
     });
 
-    // Mobile touch controls
+    // Touch controls
     const bindTouch = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -305,18 +377,31 @@ class F1PortfolioApp {
     bindTouch('touch-right', () => this.keys.right = true, () => this.keys.right = false);
     bindTouch('touch-drs', () => this.keys.boost = true, () => this.keys.boost = false);
 
-    // Click on 3D Steering Wheel Paddock Button
+    // Click on 3D objects
     window.addEventListener('click', (e) => {
-      if (this.gameState !== 'racing') return;
       this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
-      const intersects = this.raycaster.intersectObjects(this.f1Car.group.children, true);
-      for (let hit of intersects) {
-        if (hit.object.name === 'STEERING_PADDOCK_BTN' || hit.object.parent?.name === 'STEERING_PADDOCK_BTN') {
-          this.openPaddock();
-          break;
+      if (this.gameState === 'racing') {
+        // Steering wheel paddock button
+        const intersects = this.raycaster.intersectObjects(this.f1Car.group.children, true);
+        for (let hit of intersects) {
+          if (hit.object.name === 'STEERING_PADDOCK_BTN' || hit.object.parent?.name === 'STEERING_PADDOCK_BTN') {
+            this.openPaddock();
+            break;
+          }
+        }
+      } else if (this.gameState === 'lobby') {
+        // Click on 3D driver character to select him
+        if (this.driver1Char && this.driver2Char) {
+          const hitD1 = this.raycaster.intersectObjects(this.driver1Char.group.children, true);
+          const hitD2 = this.raycaster.intersectObjects(this.driver2Char.group.children, true);
+          if (hitD1.length > 0) {
+            this.lobbyUI.selectDriver(this.selectedTeam.drivers[0]);
+          } else if (hitD2.length > 0) {
+            this.lobbyUI.selectDriver(this.selectedTeam.drivers[1]);
+          }
         }
       }
     });
@@ -344,7 +429,7 @@ class F1PortfolioApp {
       this.physics.setInputs(throttle, brake, steer, this.keys.boost);
       this.physics.update(dt, this.soundManager);
 
-      // 2. Synchronize 3D Car Position & Rotation
+      // 2. Synchronize Player 3D Car
       this.f1Car.group.position.copy(this.physics.position);
       this.f1Car.group.rotation.y = this.physics.heading;
 
@@ -360,10 +445,13 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      // 4. Update In-Game Telemetry HUD
+      // 4. Update 19 AI Cars on the Starting Grid & Track
+      this.gridManager.update(dt, this.physics.position);
+
+      // 5. Update Telemetry HUD
       this.telemetryHUD.update(this.physics, this.monzaTrack);
 
-      // 5. Update Sun Light Shadow Target to follow car
+      // 6. Sunlight follows car
       this.dirLight.position.set(
         this.physics.position.x + 80,
         150,
@@ -372,7 +460,7 @@ class F1PortfolioApp {
       this.dirLight.target = this.f1Car.group;
     }
 
-    // Camera updates for all modes
+    // Camera update
     this.cameraController.update(this.f1Car.group, this.physics, dt);
 
     // Render 3D Scene
@@ -380,7 +468,7 @@ class F1PortfolioApp {
   }
 }
 
-// Instantiate on Load
+// Start
 window.addEventListener('DOMContentLoaded', () => {
   new F1PortfolioApp();
 });

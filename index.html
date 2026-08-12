@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Formula 1 Grand Prix Portfolio | Monza Experience</title>
-  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team and driver, race at Monza, and enter the Paddock engineering workstation." />
+  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team and driver, race at Monza with 20 cars on the grid, and enter the Paddock engineering workstation." />
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,79 +26,105 @@
     <span id="sound-text">AUDIO ON</span>
   </button>
 
-  <!-- ================= LOBBY: F1 OFFICIAL CAREER TEAM SELECT (MATCHING REFERENCE) ================= -->
+  <!-- ================= LOBBY: STAGE 1 (TEAM SELECT) & STAGE 2 (DRIVER CAREER) ================= -->
   <div id="lobby-screen" class="screen-overlay active f1-career-lobby">
-    <!-- Top-Left: Team Title & Factory Metadata -->
-    <div class="team-header-panel">
-      <div class="team-select-pill">TEAM SELECT</div>
-      <h1 class="team-main-title" id="lobby-team-title">SCUDERIA FERRARI HP</h1>
-      <div class="team-meta-row" id="lobby-team-meta">
-        <div class="meta-item">
-          <span class="meta-label">Team Principal</span>
-          <span class="meta-val" id="meta-principal">FRÉDÉRIC VASSEUR</span>
+    
+    <!-- STAGE 1 HEADER (TEAM SELECT) -->
+    <div id="stage-1-header" class="stage-section">
+      <div class="team-header-panel">
+        <div class="team-select-pill">TEAM SELECT</div>
+        <h1 class="team-main-title" id="lobby-team-title">SCUDERIA FERRARI HP</h1>
+        <div class="team-meta-row" id="lobby-team-meta">
+          <div class="meta-item">
+            <span class="meta-label">Team Principal</span>
+            <span class="meta-val" id="meta-principal">FRÉDÉRIC VASSEUR</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Chassis</span>
+            <span class="meta-val" id="meta-chassis">SF-25</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Base</span>
+            <span class="meta-val" id="meta-base">MARANELLO, ITALY</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Engine Supplier</span>
+            <span class="meta-val" id="meta-engine">FERRARI</span>
+          </div>
         </div>
-        <div class="meta-item">
-          <span class="meta-label">Chassis</span>
-          <span class="meta-val" id="meta-chassis">SF-25</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Base</span>
-          <span class="meta-val" id="meta-base">MARANELLO, ITALY</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Engine Supplier</span>
-          <span class="meta-val" id="meta-engine">FERRARI</span>
+      </div>
+
+      <!-- Top-Right: Driver Comparison & R&D Perks Panel -->
+      <div class="team-intel-panel">
+        <div class="driver-comparison-card" id="driver-comparison-card"></div>
+        <div class="team-perks-card">
+          <div class="perks-header">
+            <span class="col-perk">Perk</span>
+            <span class="col-rec">Recognition</span>
+          </div>
+          <div class="perks-list" id="lobby-perks-list"></div>
         </div>
       </div>
     </div>
 
-    <!-- Top-Right: Driver Comparison & R&D Perks Panel -->
-    <div class="team-intel-panel">
-      <!-- Drivers Comparison Bar -->
-      <div class="driver-comparison-card" id="driver-comparison-card">
-        <!-- Injected via JS -->
+    <!-- STAGE 2 HEADER (CONFIRM SETTINGS / DRIVER CAREER - MATCHING PHOTO) -->
+    <div id="stage-2-header" class="stage-section hidden">
+      <div class="driver-career-banner">
+        <div class="driver-career-pill">DRIVER CAREER</div>
+        <h1 class="confirm-settings-title">CONFIRM SETTINGS</h1>
+        <p class="driver-select-hint">Click driver or use buttons below to swap lead driver</p>
       </div>
 
-      <!-- Team R&D Perks Table -->
-      <div class="team-perks-card">
-        <div class="perks-header">
-          <span class="col-perk">Perk</span>
-          <span class="col-rec">Recognition</span>
-        </div>
-        <div class="perks-list" id="lobby-perks-list">
-          <!-- Injected via JS -->
-        </div>
+      <!-- Selected Driver Card Float -->
+      <div class="selected-driver-spec-card" id="selected-driver-spec-card">
+        <div class="driver-lead-name" id="lead-driver-name">LECLERC Charles</div>
+        <div class="driver-lead-stats" id="lead-driver-stats">#16 • MONACO • 8 WINS • 41 PODIUMS</div>
       </div>
     </div>
 
     <!-- Bottom Controls & Ribbon -->
     <div class="lobby-bottom-bar">
-      <!-- Horizontal Team Selector Carbon Ribbon (Matching Game) -->
-      <div class="team-carbon-ribbon" id="team-carbon-ribbon">
-        <!-- Populated via JS -->
+      <!-- Stage 1: Team Carbon Ribbon -->
+      <div id="stage-1-bottom" class="stage-bottom-group">
+        <div class="team-carbon-ribbon" id="team-carbon-ribbon"></div>
+        <button id="goto-driver-btn" class="f1-continue-btn">
+          <span class="btn-controller-glyph">Ⓕ</span>
+          <span class="btn-continue-text">CHOOSE DRIVER ➔</span>
+        </button>
       </div>
 
-      <!-- Action Prompt / Launch Grid -->
-      <div class="lobby-action-group">
-        <div class="f1-lights-gantry mini" id="f1-lights-gantry">
-          <div class="gantry-light" id="light-1"></div>
-          <div class="gantry-light" id="light-2"></div>
-          <div class="gantry-light" id="light-3"></div>
-          <div class="gantry-light" id="light-4"></div>
-          <div class="gantry-light" id="light-5"></div>
+      <!-- Stage 2: Driver Selection Controls & Grid Launch -->
+      <div id="stage-2-bottom" class="stage-bottom-group hidden">
+        <button id="back-to-team-btn" class="f1-back-btn">
+          <span class="btn-back-glyph">Ⓑ</span>
+          <span>BACK TO TEAMS</span>
+        </button>
+
+        <div class="driver-switch-toggles" id="driver-switch-toggles">
+          <!-- Populated by JS -->
         </div>
 
-        <button id="start-race-btn" class="f1-continue-btn">
-          <span class="btn-controller-glyph">Ⓕ</span>
-          <span class="btn-continue-text">CONTINUE TO MONZA GRID ➔</span>
-        </button>
+        <div class="lobby-action-group">
+          <div class="f1-lights-gantry mini" id="f1-lights-gantry">
+            <div class="gantry-light" id="light-1"></div>
+            <div class="gantry-light" id="light-2"></div>
+            <div class="gantry-light" id="light-3"></div>
+            <div class="gantry-light" id="light-4"></div>
+            <div class="gantry-light" id="light-5"></div>
+          </div>
+
+          <button id="start-race-btn" class="f1-continue-btn highlight">
+            <span class="btn-controller-glyph">Ⓐ</span>
+            <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ================= IN-GAME COCKPIT & RACE HUD ================= -->
   <div id="race-hud" class="screen-overlay hidden">
-    <!-- Top Left: F1 Race Leaderboard Tower -->
+    <!-- Top Left: F1 Race Leaderboard Tower (Full 20 Driver grid) -->
     <div class="f1-leaderboard-tower">
       <div class="tower-header">
         <span class="f1-mini-logo">F1®</span>
@@ -108,9 +134,7 @@
         <span class="lap-label">LAP</span>
         <span class="lap-value" id="hud-lap-counter">1 <span class="lap-total">/ 60</span></span>
       </div>
-      <div class="tower-drivers" id="hud-leaderboard-list">
-        <!-- Drivers dynamic ranking -->
-      </div>
+      <div class="tower-drivers" id="hud-leaderboard-list"></div>
     </div>
 
     <!-- Top Right: Sector Timing Bar -->
@@ -170,7 +194,6 @@
       </div>
 
       <div class="telemetry-core">
-        <!-- Battery / ERS Gauge -->
         <div class="gauge-ring-box">
           <svg class="progress-ring" width="70" height="70">
             <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.1)" stroke-width="5" fill="transparent" r="28" cx="35" cy="35"/>
@@ -182,13 +205,11 @@
           </div>
         </div>
 
-        <!-- Center Gear & Mode Display -->
         <div class="center-gear-display">
           <div class="gear-number" id="hud-gear">N</div>
           <div class="engine-mode" id="hud-mode">HARVESTING</div>
         </div>
 
-        <!-- Speed & RPM Display -->
         <div class="speed-rpm-box">
           <div class="speed-value" id="hud-speed">0</div>
           <div class="speed-unit">KM/H</div>
@@ -257,7 +278,7 @@
     </header>
 
     <main class="paddock-workstation-container">
-      <!-- Monitor 1: Competitive Profiles & Socials -->
+      <!-- Monitor 1: Profiles -->
       <div class="paddock-monitor monitor-profiles">
         <div class="monitor-bezel">
           <div class="monitor-top-bar">
@@ -270,7 +291,6 @@
           </div>
 
           <div class="monitor-content profile-cards-grid">
-            <!-- GitHub Card -->
             <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="profile-card github">
               <div class="card-header">
                 <div class="card-icon">🐙</div>
@@ -288,7 +308,6 @@
               </div>
             </a>
 
-            <!-- LinkedIn Card -->
             <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="profile-card linkedin">
               <div class="card-header">
                 <div class="card-icon">💼</div>
@@ -305,7 +324,6 @@
               </div>
             </a>
 
-            <!-- LeetCode Card -->
             <a href="https://leetcode.com" target="_blank" rel="noopener noreferrer" class="profile-card leetcode">
               <div class="card-header">
                 <div class="card-icon">⚡</div>
@@ -323,7 +341,6 @@
               </div>
             </a>
 
-            <!-- CodeChef Card -->
             <a href="https://codechef.com" target="_blank" rel="noopener noreferrer" class="profile-card codechef">
               <div class="card-header">
                 <div class="card-icon">👨‍🍳</div>
@@ -340,7 +357,6 @@
               </div>
             </a>
 
-            <!-- Codeforces Card -->
             <a href="https://codeforces.com" target="_blank" rel="noopener noreferrer" class="profile-card codeforces">
               <div class="card-header">
                 <div class="card-icon">🏆</div>
@@ -361,10 +377,9 @@
         <div class="monitor-stand"></div>
       </div>
 
-      <!-- Monitor 2: Portfolio OS Multi-Tab Browser -->
+      <!-- Monitor 2: Portfolio OS -->
       <div class="paddock-monitor monitor-portfolio">
         <div class="monitor-bezel">
-          <!-- OS Tabs Bar -->
           <div class="os-tabs-bar">
             <button class="os-tab active" data-tab="tab-projects">
               <span class="tab-icon">🚀</span>
@@ -384,7 +399,6 @@
             </button>
           </div>
 
-          <!-- Tab 1: Projects Showcase -->
           <div id="tab-projects" class="os-tab-pane active">
             <div class="pane-header">
               <h3>FEATURED ENGINEERING PROJECTS</h3>
@@ -458,7 +472,6 @@
             </div>
           </div>
 
-          <!-- Tab 2: About Me -->
           <div id="tab-about" class="os-tab-pane">
             <div class="pane-header">
               <h3>DRIVER & DEVELOPER TELEMETRY</h3>
@@ -491,7 +504,6 @@
             </div>
           </div>
 
-          <!-- Tab 3: Skills & Interests -->
           <div id="tab-skills" class="os-tab-pane">
             <div class="pane-header">
               <h3>CORE COMPETENCIES & PIT CREW STACK</h3>
@@ -548,7 +560,6 @@
             </div>
           </div>
 
-          <!-- Tab 4: Contact & Resume -->
           <div id="tab-contact" class="os-tab-pane">
             <div class="pane-header">
               <h3>PIT WALL COMMUNICATIONS</h3>
