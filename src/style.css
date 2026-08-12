@@ -97,12 +97,75 @@ html, body {
   pointer-events: none !important;
 }
 
-/* Sound Button */
-.sound-btn {
+/* Top Action Bar (Lobby Paddock Button & Sound Toggle) */
+.top-nav-bar {
   position: fixed;
   top: 24px;
   right: 24px;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.paddock-nav-btn {
+  background: linear-gradient(135deg, rgba(0, 210, 190, 0.25) 0%, rgba(14, 18, 26, 0.95) 100%);
+  border: 1.5px solid var(--f1-accent);
+  color: #FFF;
+  padding: 8px 18px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px rgba(0, 210, 190, 0.35);
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.paddock-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 210, 190, 0.5) 0%, rgba(20, 28, 38, 0.95) 100%);
+  box-shadow: 0 0 30px rgba(0, 210, 190, 0.7);
+  transform: translateY(-2px);
+}
+
+.lobby-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.f1-paddock-direct-btn {
+  background: rgba(0, 210, 190, 0.15);
+  border: 1.5px solid var(--f1-accent);
+  color: #FFF;
+  padding: 13px 22px;
+  border-radius: 8px;
+  font-family: var(--font-telemetry);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 210, 190, 0.25);
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.f1-paddock-direct-btn:hover {
+  background: rgba(0, 210, 190, 0.3);
+  box-shadow: 0 6px 24px rgba(0, 210, 190, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Sound Button */
+.sound-btn {
   background: rgba(14, 18, 26, 0.9);
   border: 1px solid var(--f1-border);
   color: #FFF;

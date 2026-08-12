@@ -640,15 +640,21 @@ export class PaddockRoom {
   }
 
   buildLighting() {
-    const workLight = new THREE.DirectionalLight(0xEFFFF5, 2.2);
-    workLight.position.set(0, 106, -1);
-    workLight.target = this.group;
-    workLight.castShadow = true;
-    this.scene.add(workLight);
+    // Dedicated Room Ambient Light (Guarantees bright vibrant visibility)
+    const roomAmbient = new THREE.AmbientLight(0xEFFDF8, 2.0);
+    this.group.add(roomAmbient);
 
-    const deskSpot = new THREE.SpotLight(0xD8F5EA, 3.5, 12, Math.PI / 3, 0.4);
-    deskSpot.position.set(0, 106.5, -2);
-    this.scene.add(deskSpot);
+    // Primary workshop ceiling light
+    const workPoint = new THREE.PointLight(0xFFFFFF, 3.2, 25);
+    workPoint.position.set(0, 6.2, -1.8);
+    this.group.add(workPoint);
+
+    // Desk spotlight
+    const deskSpot = new THREE.SpotLight(0xE0FFF4, 4.0, 15, Math.PI / 3, 0.3);
+    deskSpot.position.set(0, 6.5, -2.0);
+    deskSpot.target.position.set(0, 2.0, -2.0);
+    this.group.add(deskSpot);
+    this.group.add(deskSpot.target);
   }
 
   handleScreenClick(intersect) {

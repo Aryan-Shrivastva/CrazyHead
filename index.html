@@ -20,11 +20,18 @@
   <!-- Ambient Glow Backdrop for Showroom -->
   <div id="showroom-ambient-waves" class="showroom-ambient-waves"></div>
 
-  <!-- Sound Toggle -->
-  <button id="sound-toggle" class="sound-btn" title="Toggle Sound">
-    <span id="sound-icon">🔊</span>
-    <span id="sound-text">AUDIO ON</span>
-  </button>
+  <!-- Top Action Bar (Lobby Paddock Button & Sound Toggle) -->
+  <div class="top-nav-bar">
+    <button id="lobby-paddock-top-btn" class="paddock-nav-btn" title="Enter Aryan's Paddock Workstation">
+      <span class="paddock-icon">🏢</span>
+      <span class="paddock-label">ARYAN'S PADDOCK</span>
+    </button>
+
+    <button id="sound-toggle" class="sound-btn" title="Toggle Sound">
+      <span id="sound-icon">🔊</span>
+      <span id="sound-text">AUDIO ON</span>
+    </button>
+  </div>
 
   <!-- =========================================================================
        PAGE 1: TEAM SELECTION (PURE CONSTRUCTOR SELECT)
@@ -68,10 +75,15 @@
     <!-- Bottom: Team Carbon Ribbon & Next Step Button -->
     <div class="lobby-bottom-bar">
       <div class="team-carbon-ribbon" id="team-carbon-ribbon"></div>
-      <button id="confirm-team-btn" class="f1-continue-btn">
-        <span class="btn-controller-glyph">Ⓕ</span>
-        <span class="btn-continue-text">SELECT CONSTRUCTOR ➔</span>
-      </button>
+      <div class="lobby-action-buttons">
+        <button id="front-paddock-btn" class="f1-paddock-direct-btn" title="Open Paddock Engineering Room">
+          <span>🏢 ARYAN'S PADDOCK</span>
+        </button>
+        <button id="confirm-team-btn" class="f1-continue-btn">
+          <span class="btn-controller-glyph">Ⓕ</span>
+          <span class="btn-continue-text">SELECT CONSTRUCTOR ➔</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -104,10 +116,15 @@
         <!-- Injected via JS -->
       </div>
 
-      <button id="start-race-btn" class="f1-continue-btn highlight">
-        <span class="btn-controller-glyph">Ⓐ</span>
-        <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
-      </button>
+      <div class="lobby-action-buttons">
+        <button id="driver-page-paddock-btn" class="f1-paddock-direct-btn" title="Open Paddock Engineering Room">
+          <span>🏢 PADDOCK</span>
+        </button>
+        <button id="start-race-btn" class="f1-continue-btn highlight">
+          <span class="btn-controller-glyph">Ⓐ</span>
+          <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
+        </button>
+      </div>
     </div>
   </div>
 

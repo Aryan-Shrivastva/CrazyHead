@@ -243,6 +243,20 @@ class F1PortfolioApp {
       onResetCar: () => this.resetCarToTrack(),
       onReturnLobby: () => this.returnToLobby()
     });
+
+    // Front Screen Paddock Buttons
+    const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
+    const frontPaddockBtn = document.getElementById('front-paddock-btn');
+    const driverPaddockBtn = document.getElementById('driver-page-paddock-btn');
+
+    const handleLobbyPaddockClick = (e) => {
+      e.stopPropagation();
+      this.openPaddockFromLobby();
+    };
+
+    if (topPaddockBtn) topPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
+    if (frontPaddockBtn) frontPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
+    if (driverPaddockBtn) driverPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
   }
 
   setupPitStopUI() {
@@ -473,8 +487,19 @@ class F1PortfolioApp {
     }, 650);
   }
 
+  openPaddockFromLobby() {
+    this.previousPaddockState = 'lobby';
+    this.gameState = 'paddock';
+
+    this.soundManager.playRadioChime();
+    this.lobbyUI.hide();
+
+    this.cameraController.transitionToPaddock();
+  }
+
   openPaddock() {
     if (this.gameState !== 'racing') return;
+    this.previousPaddockState = 'racing';
     this.gameState = 'paddock';
 
     this.soundManager.playRadioChime();
@@ -486,15 +511,22 @@ class F1PortfolioApp {
   returnToCockpit() {
     if (this.gameState !== 'paddock') return;
 
-    this.cameraController.transitionToCockpit(
-      this.physics.position,
-      this.physics.heading,
-      () => {
-        this.gameState = 'racing';
-        this.telemetryHUD.show();
-        this.telemetryHUD.showRadioMessage('"Back on track! All systems nominal."');
-      }
-    );
+    if (this.previousPaddockState === 'lobby') {
+      this.gameState = 'lobby';
+      this.lobbyUI.show();
+      this.cameraController.setMode('showroom');
+      this.onTeamChange(this.selectedTeam, this.selectedDriver, this.lobbyPage);
+    } else {
+      this.cameraController.transitionToCockpit(
+        this.physics.position,
+        this.physics.heading,
+        () => {
+          this.gameState = 'racing';
+          this.telemetryHUD.show();
+          this.telemetryHUD.showRadioMessage('"Back on track! All systems nominal."');
+        }
+      );
+    }
   }
 
   returnToLobby() {
