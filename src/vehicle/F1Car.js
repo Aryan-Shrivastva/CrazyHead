@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
 /**
- * 3D Formula 1 Car Model Generator with Realistic Cockpit, Halo, Steering Wheel Display, & Driver Hands
+ * 3D Formula 1 Car Model Generator with Realistic Cockpit, Halo, Steering Wheel Display, Driver Hands,
+ * and Dynamic Component Damage / Breakage Physics (Front Wing, Mirrors, DRS Flap).
  */
 export class F1Car {
   constructor(team) {
@@ -9,15 +10,29 @@ export class F1Car {
     this.group = new THREE.Group();
     this.wheels = [];
     this.steerWheels = [];
+
+    // Damageable Parts References
+    this.frontWingGroup = null;
+    this.leftMirror = null;
+    this.rightMirror = null;
     this.drsFlap = null;
+    this.damageState = {
+      frontWing: false,
+      leftMirror: false,
+      rightMirror: false,
+      drs: false,
+      totalDamage: 0 // 0 to 100%
+    };
+
+    // Steering and Cockpit
     this.steeringWheel = null;
     this.steeringDisplayCanvas = null;
     this.steeringDisplayCtx = null;
     this.steeringDisplayTextures = null;
     this.haloMesh = null;
-    this.cockpitCameraPosition = new THREE.Vector3(0, 0.72, 0.15); // Cockpit eye point behind halo
-    this.tCamPosition = new THREE.Vector3(0, 1.25, -0.2); // T-Cam over airbox
-    this.chaseCamPosition = new THREE.Vector3(0, 1.8, -4.5); // Chase camera behind car
+
+    // Sparks and Debris Particles
+    this.debrisParticles = null;
 
     this.materials = {};
     this.initMaterials();
@@ -26,63 +41,54 @@ export class F1Car {
   }
 
   initMaterials() {
-    // Carbon Fiber Material
     this.materials.carbon = new THREE.MeshStandardMaterial({
       color: 0x141414,
       roughness: 0.4,
       metalness: 0.8
     });
 
-    // Dark Carbon for Halo & Splitters
     this.materials.darkCarbon = new THREE.MeshStandardMaterial({
       color: 0x0D0D0D,
       roughness: 0.35,
       metalness: 0.75
     });
 
-    // Team Primary Livery (Car Body, Nose Cone, Sidepods)
     this.materials.body = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.color),
       roughness: this.team.bodyRoughness !== undefined ? this.team.bodyRoughness : 0.25,
       metalness: this.team.bodyMetalness !== undefined ? this.team.bodyMetalness : 0.55
     });
 
-    // Team Accent Livery (Front Flaps, Rear Wing, Accents)
     this.materials.accent = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.accentColor),
       roughness: 0.3,
       metalness: 0.5
     });
 
-    // Team Sub-Accent
     this.materials.subAccent = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.subAccent || '#111111'),
       roughness: 0.35,
       metalness: 0.6
     });
 
-    // Pirelli Tire Rubber
     this.materials.tireRubber = new THREE.MeshStandardMaterial({
       color: 0x151515,
       roughness: 0.85,
       metalness: 0.1
     });
 
-    // Wheel Rims
     this.materials.rims = new THREE.MeshStandardMaterial({
       color: 0x222222,
       roughness: 0.3,
       metalness: 0.9
     });
 
-    // Wheel Center Nut
     this.materials.wheelNut = new THREE.MeshStandardMaterial({
       color: 0xE80020,
       metalness: 0.9,
       roughness: 0.2
     });
 
-    // Driver Gloves
     this.materials.gloves = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.suitColor || '#FFFFFF'),
       roughness: 0.7,
@@ -95,7 +101,6 @@ export class F1Car {
       metalness: 0.2
     });
 
-    // Rear Rain Light (Red Emissive)
     this.materials.rainLight = new THREE.MeshStandardMaterial({
       color: 0xFF0000,
       emissive: 0xFF0000,
@@ -112,7 +117,7 @@ export class F1Car {
     chassis.receiveShadow = true;
     this.group.add(chassis);
 
-    // 2. NOSE CONE (Tapering to the front)
+    // 2. NOSE CONE
     const noseGeo = new THREE.ConeGeometry(0.38, 1.8, 8);
     const nose = new THREE.Mesh(noseGeo, this.materials.body);
     nose.rotation.x = Math.PI / 2;
@@ -142,7 +147,7 @@ export class F1Car {
     sharkFin.position.set(-0.015, 0.6, -0.2);
     this.group.add(sharkFin);
 
-    // 4. SIDEPODS (Left and Right)
+    // 4. SIDEPODS
     const sidepodGeo = new THREE.BoxGeometry(0.42, 0.4, 1.6);
     const leftSidepod = new THREE.Mesh(sidepodGeo, this.materials.body);
     leftSidepod.position.set(-0.55, 0.3, -0.1);
@@ -156,32 +161,25 @@ export class F1Car {
     rightSidepod.castShadow = true;
     this.group.add(rightSidepod);
 
-    // Sidepod air intakes
-    const intakeGeo = new THREE.BoxGeometry(0.35, 0.28, 0.1);
-    const leftIntake = new THREE.Mesh(intakeGeo, this.materials.darkCarbon);
-    leftIntake.position.set(-0.55, 0.32, 0.72);
-    this.group.add(leftIntake);
+    // 5. FRONT WING ASSEMBLY (DAMAGEABLE GROUP)
+    this.frontWingGroup = new THREE.Group();
+    this.frontWingGroup.position.set(0, 0.12, 3.1);
 
-    const rightIntake = new THREE.Mesh(intakeGeo, this.materials.darkCarbon);
-    rightIntake.position.set(0.55, 0.32, 0.72);
-    this.group.add(rightIntake);
-
-    // 5. FRONT WING ASSEMBLY
     const frontWingMainGeo = new THREE.BoxGeometry(1.9, 0.06, 0.55);
     const frontWing = new THREE.Mesh(frontWingMainGeo, this.materials.accent);
-    frontWing.position.set(0, 0.12, 3.1);
     frontWing.castShadow = true;
-    this.group.add(frontWing);
+    this.frontWingGroup.add(frontWing);
 
-    // Front Wing Endplates
     const endplateGeo = new THREE.BoxGeometry(0.04, 0.24, 0.65);
     const leftEndplate = new THREE.Mesh(endplateGeo, this.materials.darkCarbon);
-    leftEndplate.position.set(-0.95, 0.2, 3.1);
-    this.group.add(leftEndplate);
+    leftEndplate.position.set(-0.95, 0.08, 0);
+    this.frontWingGroup.add(leftEndplate);
 
     const rightEndplate = new THREE.Mesh(endplateGeo, this.materials.darkCarbon);
-    rightEndplate.position.set(0.95, 0.2, 3.1);
-    this.group.add(rightEndplate);
+    rightEndplate.position.set(0.95, 0.08, 0);
+    this.frontWingGroup.add(rightEndplate);
+
+    this.group.add(this.frontWingGroup);
 
     // 6. REAR WING & DRS ASSEMBLY
     const rearPillarGeo = new THREE.BoxGeometry(0.06, 0.5, 0.2);
@@ -198,13 +196,13 @@ export class F1Car {
     rearWingLower.position.set(0, 0.85, -1.65);
     this.group.add(rearWingLower);
 
-    // Active DRS Flap
+    // Active DRS Flap (Damageable)
     const drsFlapGeo = new THREE.BoxGeometry(1.38, 0.04, 0.22);
     this.drsFlap = new THREE.Mesh(drsFlapGeo, this.materials.body);
     this.drsFlap.position.set(0, 0.95, -1.68);
     this.group.add(this.drsFlap);
 
-    // Rear Wing Endplates
+    // Rear Endplates
     const rearEndplateGeo = new THREE.BoxGeometry(0.04, 0.45, 0.5);
     const leftRearEndplate = new THREE.Mesh(rearEndplateGeo, this.materials.darkCarbon);
     leftRearEndplate.position.set(-0.7, 0.8, -1.65);
@@ -214,13 +212,13 @@ export class F1Car {
     rightRearEndplate.position.set(0.7, 0.8, -1.65);
     this.group.add(rightRearEndplate);
 
-    // Rear Blinking Rain Light
+    // Rear Rain Light
     const rainLightGeo = new THREE.BoxGeometry(0.12, 0.08, 0.05);
     const rainLight = new THREE.Mesh(rainLightGeo, this.materials.rainLight);
     rainLight.position.set(0, 0.25, -1.72);
     this.group.add(rainLight);
 
-    // 7. WHEELS & SUSPENSION WISHBONES
+    // 7. WHEELS & SUSPENSION
     this.buildWheels();
     this.buildSuspension();
   }
@@ -241,20 +239,17 @@ export class F1Car {
       const wheelGroup = new THREE.Group();
       wheelGroup.position.set(pos.x, pos.y, pos.z);
 
-      // Tire cylinder
       const tireGeo = new THREE.CylinderGeometry(tireRadius, tireRadius, pos.width, 24);
       tireGeo.rotateZ(Math.PI / 2);
       const tireMesh = new THREE.Mesh(tireGeo, this.materials.tireRubber);
       tireMesh.castShadow = true;
       wheelGroup.add(tireMesh);
 
-      // Rim cylinder
       const rimGeo = new THREE.CylinderGeometry(tireRadius * 0.65, tireRadius * 0.65, pos.width + 0.01, 16);
       rimGeo.rotateZ(Math.PI / 2);
       const rimMesh = new THREE.Mesh(rimGeo, this.materials.rims);
       wheelGroup.add(rimMesh);
 
-      // Center Wheel Nut
       const nutGeo = new THREE.CylinderGeometry(0.05, 0.05, pos.width + 0.03, 8);
       nutGeo.rotateZ(Math.PI / 2);
       const nutMesh = new THREE.Mesh(nutGeo, this.materials.wheelNut);
@@ -274,17 +269,14 @@ export class F1Car {
     const wishboneGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6);
     wishboneGeo.rotateZ(Math.PI / 2);
 
-    // Front left wishbones
     const flWishbone = new THREE.Mesh(wishboneGeo, wishboneMat);
     flWishbone.position.set(-0.55, 0.36, 1.8);
     this.group.add(flWishbone);
 
-    // Front right wishbones
     const frWishbone = new THREE.Mesh(wishboneGeo, wishboneMat);
     frWishbone.position.set(0.55, 0.36, 1.8);
     this.group.add(frWishbone);
 
-    // Rear wishbones
     const rlWishbone = new THREE.Mesh(wishboneGeo, wishboneMat);
     rlWishbone.position.set(-0.58, 0.36, -1.2);
     this.group.add(rlWishbone);
@@ -295,7 +287,7 @@ export class F1Car {
   }
 
   buildCockpitViewElements() {
-    // 1. TITANIUM / CARBON FIBER HALO (MATCHING REFERENCE IMAGE)
+    // 1. TITANIUM HALO
     const haloGroup = new THREE.Group();
     haloGroup.position.set(0, 0.65, 0.45);
 
@@ -332,7 +324,7 @@ export class F1Car {
 
     this.group.add(haloGroup);
 
-    // 2. F1 MULTI-FUNCTION STEERING WHEEL & DIGITAL LCD TELEMETRY SCREEN
+    // 2. F1 MULTI-FUNCTION STEERING WHEEL
     this.steeringWheel = new THREE.Group();
     this.steeringWheel.position.set(0, 0.52, 0.55);
 
@@ -367,6 +359,7 @@ export class F1Car {
     screenMesh.position.set(0, 0.01, 0.022);
     this.steeringWheel.add(screenMesh);
 
+    // Buttons
     const buttonColors = [0xE80020, 0x00D2BE, 0xFFC800, 0x34C759, 0x007AFF, 0xAF52DE];
     const buttonPositions = [
       [-0.12, 0.07], [0.12, 0.07],
@@ -424,19 +417,68 @@ export class F1Car {
     rightHand.add(rightArm);
     this.steeringWheel.add(rightHand);
 
-    // Side Mirrors
+    // 4. SIDE MIRRORS (DAMAGEABLE)
     const mirrorGeo = new THREE.BoxGeometry(0.16, 0.08, 0.06);
-    const leftMirror = new THREE.Mesh(mirrorGeo, this.materials.body);
-    leftMirror.position.set(-0.48, 0.54, 0.6);
-    leftMirror.rotation.y = 0.2;
-    this.group.add(leftMirror);
+    this.leftMirror = new THREE.Mesh(mirrorGeo, this.materials.body);
+    this.leftMirror.position.set(-0.48, 0.54, 0.6);
+    this.leftMirror.rotation.y = 0.2;
+    this.group.add(this.leftMirror);
 
-    const rightMirror = new THREE.Mesh(mirrorGeo, this.materials.body);
-    rightMirror.position.set(0.48, 0.54, 0.6);
-    rightMirror.rotation.y = -0.2;
-    this.group.add(rightMirror);
+    this.rightMirror = new THREE.Mesh(mirrorGeo, this.materials.body);
+    this.rightMirror.position.set(0.48, 0.54, 0.6);
+    this.rightMirror.rotation.y = -0.2;
+    this.group.add(this.rightMirror);
 
     this.group.add(this.steeringWheel);
+  }
+
+  triggerDamage(type = 'front', impactIntensity = 1.0) {
+    if (type === 'front' && !this.damageState.frontWing) {
+      this.damageState.frontWing = true;
+      this.damageState.totalDamage += 40;
+      // Front wing drops down, tilts and drags
+      if (this.frontWingGroup) {
+        this.frontWingGroup.position.y = 0.02;
+        this.frontWingGroup.rotation.z = 0.15;
+        this.frontWingGroup.rotation.x = -0.2;
+      }
+      return 'FRONT_WING';
+    } else if (type === 'left' && !this.damageState.leftMirror) {
+      this.damageState.leftMirror = true;
+      this.damageState.totalDamage += 15;
+      if (this.leftMirror) this.leftMirror.visible = false;
+      return 'LEFT_MIRROR';
+    } else if (type === 'right' && !this.damageState.rightMirror) {
+      this.damageState.rightMirror = true;
+      this.damageState.totalDamage += 15;
+      if (this.rightMirror) this.rightMirror.visible = false;
+      return 'RIGHT_MIRROR';
+    } else if (type === 'rear' && !this.damageState.drs) {
+      this.damageState.drs = true;
+      this.damageState.totalDamage += 25;
+      if (this.drsFlap) {
+        this.drsFlap.rotation.z = 0.3;
+      }
+      return 'REAR_WING';
+    }
+    return null;
+  }
+
+  repairAllDamage() {
+    this.damageState = {
+      frontWing: false,
+      leftMirror: false,
+      rightMirror: false,
+      drs: false,
+      totalDamage: 0
+    };
+    if (this.frontWingGroup) {
+      this.frontWingGroup.position.set(0, 0.12, 3.1);
+      this.frontWingGroup.rotation.set(0, 0, 0);
+    }
+    if (this.leftMirror) this.leftMirror.visible = true;
+    if (this.rightMirror) this.rightMirror.visible = true;
+    if (this.drsFlap) this.drsFlap.rotation.set(0, 0, 0);
   }
 
   updateSteeringScreen(speedKmH, gear, batteryPercent, rpmRatio, mode = 'HARVESTING') {
@@ -463,9 +505,9 @@ export class F1Car {
       ctx.fillRect(startX + i * (ledWidth + 4), 10, ledWidth, 12);
     }
 
-    ctx.fillStyle = '#8E9BAE';
+    ctx.fillStyle = this.damageState.frontWing ? '#FF3B30' : '#8E9BAE';
     ctx.font = 'bold 18px "Orbitron", monospace';
-    ctx.fillText('DRS K2', 30, 48);
+    ctx.fillText(this.damageState.frontWing ? 'WING DMG' : 'DRS K2', 30, 48);
     ctx.fillText('+0.183 ▲', w - 130, 48);
 
     ctx.fillStyle = '#FFFFFF';
@@ -479,7 +521,7 @@ export class F1Car {
 
     ctx.fillStyle = '#1A2333';
     ctx.fillRect(40, 195, w - 80, 18);
-    ctx.fillStyle = '#00D2BE';
+    ctx.fillStyle = this.damageState.frontWing ? '#FF3B30' : '#00D2BE';
     ctx.fillRect(40, 195, (w - 80) * (batteryPercent / 100), 18);
 
     ctx.fillStyle = '#FFFFFF';
@@ -490,16 +532,6 @@ export class F1Car {
     ctx.textAlign = 'right';
     ctx.fillStyle = '#FFC800';
     ctx.fillText(mode, w - 40, 240);
-
-    ctx.fillStyle = '#34C759';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('FL: 98°C', 40, 85);
-    ctx.fillText('RL: 102°C', 40, 115);
-
-    ctx.textAlign = 'right';
-    ctx.fillText('FR: 99°C', w - 40, 85);
-    ctx.fillText('RR: 104°C', w - 40, 115);
 
     if (this.steeringDisplayTextures) {
       this.steeringDisplayTextures.needsUpdate = true;
@@ -537,14 +569,14 @@ export class F1Car {
     });
 
     if (this.steeringWheel) {
-      this.steeringWheel.rotation.z = -steeringAngle * 1.6;
+      this.steeringWheel.rotation.z = -steeringAngle * 1.5;
     }
 
     this.wheels.forEach(wheel => {
       wheel.children[0].rotation.x += speedRatio * 0.4;
     });
 
-    if (this.drsFlap) {
+    if (this.drsFlap && !this.damageState.drs) {
       this.drsFlap.rotation.x = isDrsOpen ? -0.35 : 0;
     }
   }

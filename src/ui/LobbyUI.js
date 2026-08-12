@@ -1,10 +1,9 @@
-import confetti from 'canvas-confetti';
 import { F1_TEAMS } from '../data/teams.js';
 
 /**
  * Sequential 2-Page Lobby Controller:
- * Page 1: Pure Constructor/Team Selection (Car preview + Perks table + Ribbon)
- * Page 2: Driver Selection / Career Confirm Settings (3D Drivers in front of car)
+ * Page 1: Pure Constructor/Team Selection
+ * Page 2: Driver Selection / Career Confirm Settings
  */
 export class LobbyUI {
   constructor(onStartRace, onTeamChange, onDriverChange, soundManager) {
@@ -13,9 +12,9 @@ export class LobbyUI {
     this.onDriverChange = onDriverChange;
     this.soundManager = soundManager;
 
-    this.selectedTeam = F1_TEAMS[0]; // Default: Ferrari
-    this.selectedDriver = this.selectedTeam.drivers[0]; // Default: Leclerc
-    this.currentPage = 1; // 1 = Team Select, 2 = Driver Select
+    this.selectedTeam = F1_TEAMS[0]; // Ferrari default
+    this.selectedDriver = this.selectedTeam.drivers[0]; // Leclerc default
+    this.currentPage = 1;
 
     // Page 1 Elements
     this.pageTeam = document.getElementById('page-team-select');
@@ -64,7 +63,6 @@ export class LobbyUI {
         <span class="tile-team-short">${team.logoText || team.shortName}</span>
       `;
 
-      // Handle pointer events for immediate responsiveness
       const onSelect = (e) => {
         if (e) e.stopPropagation();
         this.selectTeam(team);
@@ -151,14 +149,12 @@ export class LobbyUI {
   }
 
   updateTeamDetails() {
-    // 1. Team Meta (Page 1)
     if (this.teamTitleEl) this.teamTitleEl.textContent = this.selectedTeam.name.toUpperCase();
     if (this.metaPrincipal) this.metaPrincipal.textContent = this.selectedTeam.teamPrincipal;
     if (this.metaChassis) this.metaChassis.textContent = this.selectedTeam.chassis;
     if (this.metaBase) this.metaBase.textContent = this.selectedTeam.base;
     if (this.metaEngine) this.metaEngine.textContent = this.selectedTeam.engineSupplier;
 
-    // 2. Lead Driver Info (Page 2)
     if (this.leadDriverName) this.leadDriverName.textContent = this.selectedDriver.name;
     if (this.leadDriverStats) {
       this.leadDriverStats.textContent = `#${this.selectedDriver.number} • ${this.selectedDriver.flag} • ${this.selectedDriver.wins} WINS • ${this.selectedDriver.podiums} PODIUMS`;
@@ -167,12 +163,10 @@ export class LobbyUI {
       this.leadDriverTeam.textContent = this.selectedTeam.name.toUpperCase();
     }
 
-    // 3. Ambient Wave Color
     if (this.ambientWaves) {
       this.ambientWaves.style.setProperty('--ambient-wave-color', `${this.selectedTeam.color}55`);
     }
 
-    // 4. Perks Table (Page 1)
     if (this.perksListEl) {
       this.perksListEl.innerHTML = '';
       (this.selectedTeam.perks || []).forEach(perk => {
@@ -205,53 +199,12 @@ export class LobbyUI {
     if (this.startBtn) {
       this.startBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.triggerLightsOutSequence();
+        this.hide();
+        if (this.onStartRace) {
+          this.onStartRace(this.selectedTeam, this.selectedDriver);
+        }
       });
     }
-  }
-
-  triggerLightsOutSequence() {
-    this.startBtn.disabled = true;
-    this.startBtn.style.opacity = '0.5';
-
-    const lights = [
-      document.getElementById('light-1'),
-      document.getElementById('light-2'),
-      document.getElementById('light-3'),
-      document.getElementById('light-4'),
-      document.getElementById('light-5')
-    ];
-
-    lights.forEach(l => l && l.classList.remove('on'));
-
-    let count = 0;
-    const interval = setInterval(() => {
-      if (count < 5) {
-        if (lights[count]) lights[count].classList.add('on');
-        if (this.soundManager) this.soundManager.playGantryLightBeep(false);
-        count++;
-      } else {
-        clearInterval(interval);
-        const randomDelay = 800 + Math.random() * 800;
-        setTimeout(() => {
-          lights.forEach(l => l && l.classList.remove('on'));
-          if (this.soundManager) this.soundManager.playGantryLightBeep(true);
-
-          confetti({
-            particleCount: 130,
-            spread: 90,
-            origin: { y: 0.6 }
-          });
-
-          setTimeout(() => {
-            this.hide();
-            if (this.onStartRace) {
-              this.onStartRace(this.selectedTeam, this.selectedDriver);
-            }
-          }, 350);
-        }, randomDelay);
-      }
-    }, 650);
   }
 
   show() {

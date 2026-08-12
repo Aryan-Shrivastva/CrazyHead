@@ -17,7 +17,7 @@
   <!-- 3D Canvas -->
   <canvas id="webgl-canvas"></canvas>
 
-  <!-- Ambient Wave Backdrop for Showroom -->
+  <!-- Ambient Glow Backdrop for Showroom -->
   <div id="showroom-ambient-waves" class="showroom-ambient-waves"></div>
 
   <!-- Sound Toggle -->
@@ -104,25 +104,28 @@
         <!-- Injected via JS -->
       </div>
 
-      <div class="lobby-action-group">
-        <div class="f1-lights-gantry mini" id="f1-lights-gantry">
-          <div class="gantry-light" id="light-1"></div>
-          <div class="gantry-light" id="light-2"></div>
-          <div class="gantry-light" id="light-3"></div>
-          <div class="gantry-light" id="light-4"></div>
-          <div class="gantry-light" id="light-5"></div>
-        </div>
-
-        <button id="start-race-btn" class="f1-continue-btn highlight">
-          <span class="btn-controller-glyph">Ⓐ</span>
-          <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
-        </button>
-      </div>
+      <button id="start-race-btn" class="f1-continue-btn highlight">
+        <span class="btn-controller-glyph">Ⓐ</span>
+        <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
+      </button>
     </div>
   </div>
 
   <!-- ================= IN-GAME COCKPIT & RACE HUD ================= -->
   <div id="race-hud" class="screen-overlay hidden">
+    <!-- Real-Time 5 Red Lights to Green Start Gantry (Overhead in Cockpit) -->
+    <div id="cockpit-start-gantry" class="cockpit-start-gantry hidden">
+      <div class="gantry-header">FORMULA 1 MONZA GRAND PRIX</div>
+      <div class="gantry-lights-row">
+        <div class="start-light-pod" id="grid-light-1"><span class="bulb"></span></div>
+        <div class="start-light-pod" id="grid-light-2"><span class="bulb"></span></div>
+        <div class="start-light-pod" id="grid-light-3"><span class="bulb"></span></div>
+        <div class="start-light-pod" id="grid-light-4"><span class="bulb"></span></div>
+        <div class="start-light-pod" id="grid-light-5"><span class="bulb"></span></div>
+      </div>
+      <div class="gantry-status-text" id="gantry-status-text">GRID FORMATION • HOLD REV</div>
+    </div>
+
     <!-- Top Left: F1 Race Leaderboard Tower -->
     <div class="f1-leaderboard-tower">
       <div class="tower-header">
@@ -162,10 +165,15 @@
       </div>
     </div>
 
-    <!-- Top Center Radio Banner -->
+    <!-- Top Center Radio Banner & Damage Warnings -->
     <div id="radio-banner" class="radio-banner hidden">
       <div class="radio-icon">📻</div>
       <div class="radio-text" id="radio-text">"Box Box, Head to the Paddock!"</div>
+    </div>
+
+    <div id="damage-warning-banner" class="damage-warning-banner hidden">
+      <span class="warn-icon">⚠️</span>
+      <span id="damage-text">FRONT WING DAMAGE - DOWNFORCE REDUCED</span>
     </div>
 
     <!-- Bottom Left: Track Minimap -->
@@ -258,8 +266,6 @@
 
   <!-- ================= PADDOCK / TEAM HQ DUAL-MONITOR WORKSTATION ================= -->
   <div id="paddock-suite" class="screen-overlay hidden">
-    <div class="paddock-backdrop"></div>
-
     <header class="paddock-header">
       <div class="paddock-team-info">
         <span class="paddock-badge" id="paddock-team-badge">🐎</span>
@@ -341,7 +347,6 @@
 
             <a href="https://codechef.com" target="_blank" rel="noopener noreferrer" class="profile-card codechef">
               <div class="card-header">
-                <div class="card-icon">👨‍🍳</div>
                 <div class="card-info">
                   <h4>CodeChef</h4>
                   <span>Competitive Programmer</span>

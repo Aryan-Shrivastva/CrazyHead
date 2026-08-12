@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
+import confetti from 'canvas-confetti';
 import { F1_TEAMS } from './data/teams.js';
 import { MonzaTrack } from './world/MonzaTrack.js';
 import { F1Car } from './vehicle/F1Car.js';
@@ -20,6 +21,7 @@ class F1PortfolioApp {
     this.canvas = document.getElementById('webgl-canvas');
     this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock'
     this.lobbyPage = 1; // 1 = Team Select, 2 = Driver Select
+    this.isLaunchAllowed = false; // Locked until 5 Red Lights turn Green!
 
     this.selectedTeam = F1_TEAMS[0]; // Ferrari default
     this.selectedDriver = this.selectedTeam.drivers[0]; // Leclerc default
@@ -45,9 +47,9 @@ class F1PortfolioApp {
     this.soundManager = new SoundManager();
     this.monzaTrack = null;
     this.f1Car = null;
-    this.driver1Char = null; // 3D Driver 1
-    this.driver2Char = null; // 3D Driver 2 (Teammate)
-    this.gridManager = null; // 20-car starting grid
+    this.driver1Char = null;
+    this.driver2Char = null;
+    this.gridManager = null;
     this.physics = new VehiclePhysics();
     this.cameraController = null;
 
@@ -59,6 +61,9 @@ class F1PortfolioApp {
     // Raycaster for 3D Interactions
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+
+    // Collision Cooldown
+    this.lastCollisionTime = 0;
 
     // Controls Input State
     this.keys = {
@@ -90,13 +95,13 @@ class F1PortfolioApp {
   setupThreeScene() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x06080C);
-    this.scene.fog = new THREE.FogExp2(0x06080C, 0.0012);
+    this.scene.fog = new THREE.FogExp2(0x06080C, 0.001);
 
     this.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      2500
+      3000
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -117,11 +122,9 @@ class F1PortfolioApp {
   }
 
   setupLighting() {
-    // Ambient / Hemisphere Light
     this.hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0x1A2030, 1.2);
     this.scene.add(this.hemiLight);
 
-    // Primary Sunlight for Monza Track
     this.dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.8);
     this.dirLight.position.set(80, 160, 80);
     this.dirLight.castShadow = true;
@@ -135,62 +138,56 @@ class F1PortfolioApp {
     this.dirLight.shadow.camera.bottom = -150;
     this.scene.add(this.dirLight);
 
-    // Showroom Overhead High-Intensity Key Spotlight
     this.showroomSpotlight = new THREE.SpotLight(0xFFFFFF, 5.0, 30, Math.PI / 3, 0.3, 1.0);
     this.showroomSpotlight.position.set(0, 7.5, 2.0);
     this.showroomSpotlight.castShadow = true;
     this.scene.add(this.showroomSpotlight);
 
-    // Showroom Front 3/4 Fill Light
     this.showroomFillLight = new THREE.DirectionalLight(0xFFFFFF, 1.8);
     this.showroomFillLight.position.set(5, 4, 8);
     this.scene.add(this.showroomFillLight);
 
-    // Showroom Rear Rim Light (Highlights rear wing & diffuser)
     this.showroomRimLight = new THREE.DirectionalLight(0x64C4FF, 2.0);
     this.showroomRimLight.position.set(-6, 3, -6);
     this.scene.add(this.showroomRimLight);
   }
 
   buildWorld() {
-    // 1. Build 3D Monza Circuit
+    // 1. 3D Monza Circuit
     this.monzaTrack = new MonzaTrack(this.scene);
 
-    // 2. Build 20-Car Grid Manager
+    // 2. 20-Car Grid Manager
     this.gridManager = new GridManager(this.scene, this.monzaTrack);
 
-    // 3. Build Showroom Podium Turntable (Elevated circular platform with LED Neon ring)
+    // 3. Showroom Podium
     this.buildShowroomPodium();
 
-    // 4. Build Player 3D F1 Car
+    // 4. Player 3D F1 Car
     this.f1Car = new F1Car(this.selectedTeam);
     this.scene.add(this.f1Car.group);
     this.f1Car.group.position.set(0, 0, 0);
-
-    // Set spotlight target directly to car
     this.showroomSpotlight.target = this.f1Car.group;
 
-    // 5. Build 3D Drivers for Page 2 (Driver Selection)
+    // 5. 3D Drivers for Page 2
     const d1 = this.selectedTeam.drivers[0];
     const d2 = this.selectedTeam.drivers[1];
 
     this.driver1Char = new DriverCharacter(d1, this.selectedTeam, true);
-    this.driver1Char.group.position.set(-0.65, 0, 2.1); // Foreground front
+    this.driver1Char.group.position.set(-0.65, 0, 2.1);
     this.driver1Char.group.rotation.y = 0.15;
-    this.driver1Char.group.visible = false; // Hidden on Page 1 (Team select)
+    this.driver1Char.group.visible = false;
     this.scene.add(this.driver1Char.group);
 
     this.driver2Char = new DriverCharacter(d2, this.selectedTeam, false);
-    this.driver2Char.group.position.set(1.9, 0, 0.6); // Midground right
+    this.driver2Char.group.position.set(1.9, 0, 0.6);
     this.driver2Char.group.rotation.y = -0.25;
-    this.driver2Char.group.visible = false; // Hidden on Page 1
+    this.driver2Char.group.visible = false;
     this.scene.add(this.driver2Char.group);
   }
 
   buildShowroomPodium() {
     this.showroomPodium = new THREE.Group();
 
-    // Cylindrical Turntable Base
     const baseGeo = new THREE.CylinderGeometry(4.2, 4.5, 0.25, 48);
     const baseMat = new THREE.MeshStandardMaterial({
       color: 0x141824,
@@ -202,7 +199,6 @@ class F1PortfolioApp {
     baseMesh.receiveShadow = true;
     this.showroomPodium.add(baseMesh);
 
-    // Carbon fiber top plate
     const topGeo = new THREE.CylinderGeometry(4.0, 4.0, 0.04, 48);
     const topMat = new THREE.MeshStandardMaterial({
       color: 0x0E1118,
@@ -214,7 +210,6 @@ class F1PortfolioApp {
     topMesh.receiveShadow = true;
     this.showroomPodium.add(topMesh);
 
-    // Glowing LED Neon Edge Ring
     const ringGeo = new THREE.TorusGeometry(4.05, 0.04, 16, 64);
     ringGeo.rotateX(Math.PI / 2);
     this.podiumRingMaterial = new THREE.MeshStandardMaterial({
@@ -269,7 +264,6 @@ class F1PortfolioApp {
     this.selectedDriver = driver || team.drivers[0];
     this.lobbyPage = pageNum;
 
-    // 1. Update 3D Car Livery & Finishes
     if (this.f1Car) {
       this.f1Car.updateTeam(team);
     }
@@ -277,23 +271,17 @@ class F1PortfolioApp {
       this.paddockHUD.updateTeam(team);
     }
 
-    // 2. Update Showroom Lights & Glowing Podium Ring
-    if (this.showroomSpotlight) {
-      this.showroomSpotlight.color.set(0xFFFFFF);
-    }
     if (this.podiumRingMaterial) {
       this.podiumRingMaterial.color.set(team.color);
       this.podiumRingMaterial.emissive.set(team.color);
       this.podiumRingMaterial.needsUpdate = true;
     }
 
-    // 3. Update 3D Drivers
     const d1 = team.drivers[0];
     const d2 = team.drivers[1];
     if (this.driver1Char) this.driver1Char.updateTeamAndDriver(d1, team);
     if (this.driver2Char) this.driver2Char.updateTeamAndDriver(d2, team);
 
-    // Page 1 vs Page 2 Visibility
     const isDriverPage = (pageNum === 2 && this.gameState === 'lobby');
     if (this.driver1Char) this.driver1Char.group.visible = isDriverPage;
     if (this.driver2Char) this.driver2Char.group.visible = isDriverPage;
@@ -313,8 +301,6 @@ class F1PortfolioApp {
 
     const isDriver1Lead = this.selectedDriver.id === this.selectedTeam.drivers[0].id;
 
-    // Foreground Lead Position: (x: -0.65, y: 0, z: 2.1)
-    // Midground Teammate Position: (x: 1.9, y: 0, z: 0.6)
     const posFront = { x: -0.65, y: 0, z: 2.1, rotY: 0.15 };
     const posBack = { x: 1.9, y: 0, z: 0.6, rotY: -0.25 };
 
@@ -337,8 +323,8 @@ class F1PortfolioApp {
     this.selectedTeam = team;
     this.selectedDriver = driver;
     this.gameState = 'racing';
+    this.isLaunchAllowed = false; // Locked on grid until lights turn green!
 
-    // Hide showroom elements during race
     if (this.driver1Char) this.driver1Char.group.visible = false;
     if (this.driver2Char) this.driver2Char.group.visible = false;
     if (this.showroomPodium) this.showroomPodium.visible = false;
@@ -350,21 +336,133 @@ class F1PortfolioApp {
     // 2. Position Player Car in designated grid box
     const slot = this.gridManager.getPlayerGridSlot(playerSlotIndex);
     this.physics.resetPosition(slot.x, slot.y, slot.z, slot.heading);
+    this.f1Car.repairAllDamage();
     this.f1Car.group.position.copy(this.physics.position);
     this.f1Car.group.rotation.y = this.physics.heading;
 
-    // 3. Switch camera to first-person Cockpit Halo view (Matching reference photo!)
+    // 3. Switch camera directly to first-person Cockpit view
     this.cameraController.setMode('cockpit');
 
-    // 4. Initialize HUD and audio
+    // 4. Initialize HUD and Audio
     this.telemetryHUD.initRace(team, driver);
     this.telemetryHUD.show();
     this.soundManager.init();
     this.soundManager.resume();
 
-    // Launch AI cars
-    this.gridManager.startRace();
-    this.telemetryHUD.showRadioMessage(`"20 cars on the grid! Lights out, push to pass, ${driver.name}!"`);
+    // 5. Execute Real-Time 5 Red Lights to GREEN Starting Sequence in Cockpit!
+    this.runCockpitStartSequence(driver);
+  }
+
+  runCockpitStartSequence(driver) {
+    const gantryEl = document.getElementById('cockpit-start-gantry');
+    const statusText = document.getElementById('gantry-status-text');
+    const lightPods = [
+      document.getElementById('grid-light-1'),
+      document.getElementById('grid-light-2'),
+      document.getElementById('grid-light-3'),
+      document.getElementById('grid-light-4'),
+      document.getElementById('grid-light-5')
+    ];
+
+    if (!gantryEl) return;
+
+    gantryEl.classList.remove('hidden');
+    if (statusText) {
+      statusText.textContent = 'STARTING GRID FORMATION • HOLD REV';
+      statusText.className = 'gantry-status-text';
+    }
+
+    lightPods.forEach(p => {
+      if (p) {
+        p.classList.remove('red-on');
+        p.classList.remove('green-on');
+      }
+    });
+
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count < 5) {
+        if (lightPods[count]) lightPods[count].classList.add('red-on');
+        this.soundManager.playGantryLightBeep(false);
+        count++;
+      } else {
+        clearInterval(interval);
+
+        // Random pause between 1.0s and 2.0s with revving engines
+        const randomDelay = 1000 + Math.random() * 1000;
+        setTimeout(() => {
+          // 5 RED LIGHTS TURN GREEN! ALL CARS LAUNCH!
+          lightPods.forEach(p => {
+            if (p) {
+              p.classList.remove('red-on');
+              p.classList.add('green-on');
+            }
+          });
+
+          this.soundManager.playGantryLightBeep(true);
+          this.isLaunchAllowed = true;
+          this.gridManager.startRace();
+
+          if (statusText) {
+            statusText.textContent = '🟢 LIGHTS OUT AND AWAY WE GO!';
+            statusText.className = 'gantry-status-text green';
+          }
+
+          confetti({
+            particleCount: 140,
+            spread: 90,
+            origin: { y: 0.5 }
+          });
+
+          this.telemetryHUD.showRadioMessage(`"Lights out, push to pass, ${driver.name}!"`);
+
+          // Hide gantry after 2.5 seconds
+          setTimeout(() => {
+            gantryEl.classList.add('hidden');
+          }, 2500);
+        }, randomDelay);
+      }
+    }, 700);
+  }
+
+  handleCarCollision(hitZone, impactDir, aiCar) {
+    const now = Date.now();
+    if (now - this.lastCollisionTime < 600) return; // Debounce rapid hits
+    this.lastCollisionTime = now;
+
+    // Apply physical bounce impulse
+    this.physics.applyCollisionImpulse(impactDir, 1.2);
+
+    // Trigger visual component damage
+    const brokenPart = this.f1Car.triggerDamage(hitZone);
+    if (brokenPart === 'FRONT_WING') {
+      this.physics.frontWingDamaged = true;
+    }
+
+    // Play collision sound
+    this.soundManager.playGearShiftSound();
+
+    // Show HUD damage warning banner
+    const warnBanner = document.getElementById('damage-warning-banner');
+    const warnText = document.getElementById('damage-text');
+    if (warnBanner && warnText) {
+      if (brokenPart === 'FRONT_WING') {
+        warnText.textContent = 'FRONT WING DAMAGED - HIGH-SPEED DOWNFORCE REDUCED!';
+      } else if (brokenPart === 'LEFT_MIRROR' || brokenPart === 'RIGHT_MIRROR') {
+        warnText.textContent = 'SIDE MIRROR SNAPPED OFF!';
+      } else if (brokenPart === 'REAR_WING') {
+        warnText.textContent = 'REAR WING IMPACT DETECTED!';
+      } else {
+        warnText.textContent = 'BODYWORK CONTACT!';
+      }
+
+      warnBanner.classList.remove('hidden');
+      setTimeout(() => {
+        warnBanner.classList.add('hidden');
+      }, 3500);
+    }
+
+    this.telemetryHUD.showRadioMessage('"Caution, bodywork contact detected!"', 2500);
   }
 
   openPaddock() {
@@ -399,6 +497,10 @@ class F1PortfolioApp {
     this.telemetryHUD.hide();
     this.paddockHUD.hide();
     this.gridManager.clearGrid();
+    this.f1Car.repairAllDamage();
+
+    const gantryEl = document.getElementById('cockpit-start-gantry');
+    if (gantryEl) gantryEl.classList.add('hidden');
 
     if (this.showroomPodium) this.showroomPodium.visible = true;
 
@@ -450,7 +552,7 @@ class F1PortfolioApp {
       if (e.code === 'Space') this.keys.boost = false;
     });
 
-    // Mobile touch controls
+    // Touch controls
     const bindTouch = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -466,7 +568,6 @@ class F1PortfolioApp {
     bindTouch('touch-right', () => this.keys.right = true, () => this.keys.right = false);
     bindTouch('touch-drs', () => this.keys.boost = true, () => this.keys.boost = false);
 
-    // Click on 3D Objects
     window.addEventListener('click', (e) => {
       if (e.target.tagName !== 'CANVAS') return;
 
@@ -508,7 +609,8 @@ class F1PortfolioApp {
     const dt = this.clock.getDelta();
 
     if (this.gameState === 'racing') {
-      let throttle = this.keys.forward ? 1 : 0;
+      // 1. Process Inputs (Throttle only active after 5 red lights turn green!)
+      let throttle = (this.isLaunchAllowed && this.keys.forward) ? 1 : 0;
       let brake = this.keys.backward ? 1 : 0;
       let steer = 0;
       if (this.keys.left) steer += 1;
@@ -517,9 +619,13 @@ class F1PortfolioApp {
       this.physics.setInputs(throttle, brake, steer, this.keys.boost);
       this.physics.update(dt, this.soundManager);
 
+      // 2. Synchronize Player 3D Car with chassis roll in corners
       this.f1Car.group.position.copy(this.physics.position);
       this.f1Car.group.rotation.y = this.physics.heading;
+      this.f1Car.group.rotation.z = this.physics.rollAngle;
+      this.f1Car.group.rotation.x = this.physics.pitchAngle;
 
+      // 3. Update Steering Screen & Wheel
       const speedKmH = this.physics.velocity.length() * 3.6;
       const rpmRatio = (this.physics.rpm - this.physics.idleRpm) / (this.physics.maxRpm - this.physics.idleRpm);
       this.f1Car.update(this.physics.currentSteer, speedKmH / 300, this.physics.isDrsOpen);
@@ -531,9 +637,15 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      this.gridManager.update(dt, this.physics.position);
+      // 4. Update 19 AI Cars & Detect Collisions with Player Car
+      this.gridManager.update(dt, this.physics, (hitZone, impactDir, aiCar) => {
+        this.handleCarCollision(hitZone, impactDir, aiCar);
+      });
+
+      // 5. Update Telemetry HUD
       this.telemetryHUD.update(this.physics, this.monzaTrack);
 
+      // 6. Sunlight follows car
       this.dirLight.position.set(
         this.physics.position.x + 80,
         150,
