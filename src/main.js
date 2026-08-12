@@ -653,9 +653,7 @@ class F1PortfolioApp {
       if (this.gameState === 'paddock') {
         if (this.paddockRoom) {
           const hits = this.raycaster.intersectObjects(this.paddockRoom.group.children, true);
-          if (hits.length > 0) {
-            this.paddockRoom.handleGlobalClick(hits);
-          }
+          this.paddockRoom.handleGlobalClick(hits);
         }
       } else if (this.gameState === 'racing') {
         const intersects = this.raycaster.intersectObjects(this.f1Car.group.children, true);

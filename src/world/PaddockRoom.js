@@ -1432,13 +1432,26 @@ export class PaddockRoom {
   }
 
   handleGlobalClick(hits) {
-    if (!hits || hits.length === 0) return;
+    // 1. If clicked in Overview Stage (Image 1) -> Zoom into Desk Workstation (Image 2)
+    if (this.stage === 'overview') {
+      this.zoomIntoDesk();
+      return;
+    }
+
+    if (!hits || hits.length === 0) {
+      // Clicked on empty space
+      if (this.stage === 'desk') {
+        this.enterPaddockOverview();
+      } else if (this.stage === 'top_monitor' || this.stage === 'bottom_monitor') {
+        this.zoomIntoDesk();
+      }
+      return;
+    }
 
     for (let hit of hits) {
       let cur = hit.object;
       let isTop = false;
       let isBottom = false;
-      let isEngineer = false;
 
       while (cur && cur !== this.group) {
         if (cur === this.topMonGroup || cur.name === 'PADDOCK_TOP_SCREEN') {
@@ -1449,13 +1462,10 @@ export class PaddockRoom {
           isBottom = true;
           break;
         }
-        if (cur === this.engineerGroup || cur.name === 'PADDOCK_ENGINEER_CLICK') {
-          isEngineer = true;
-          break;
-        }
         cur = cur.parent;
       }
 
+      // 2. Clicked Top Monitor
       if (isTop) {
         if (this.stage !== 'top_monitor') {
           this.zoomIntoTopMonitor();
@@ -1488,6 +1498,7 @@ export class PaddockRoom {
         }
       }
 
+      // 3. Clicked Bottom Monitor
       if (isBottom) {
         if (this.stage !== 'bottom_monitor') {
           this.zoomIntoBottomMonitor();
@@ -1513,17 +1524,26 @@ export class PaddockRoom {
           return;
         }
       }
+    }
 
-      if (isEngineer || this.stage === 'overview') {
-        this.zoomIntoDesk();
-        return;
-      }
+    // 4. In Desk View (Image 2): Clicked ANYWHERE else (Desk, character, tires, posters, wall) -> Return to Overview (Image 1)
+    if (this.stage === 'desk') {
+      this.enterPaddockOverview();
+      return;
+    }
+
+    // 5. In Full-screen Monitor Focus: Clicked outside monitor controls -> Return to Desk
+    if (this.stage === 'top_monitor' || this.stage === 'bottom_monitor') {
+      this.zoomIntoDesk();
+      return;
     }
   }
 
   handleScreenClick(intersect) {
     if (intersect) {
       this.handleGlobalClick([intersect]);
+    } else {
+      this.handleGlobalClick([]);
     }
   }
 }
