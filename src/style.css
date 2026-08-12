@@ -75,7 +75,7 @@ html, body {
   height: 100vh;
   z-index: 10;
   pointer-events: none;
-  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s ease;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s ease;
 }
 
 .screen-overlay.active {
@@ -88,10 +88,6 @@ html, body {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.98);
-}
-
-.stage-section.hidden, .stage-bottom-group.hidden {
-  display: none !important;
 }
 
 /* Sound Button */
@@ -123,7 +119,7 @@ html, body {
 }
 
 /* ==========================================================================
-   LOBBY SCREEN: STAGE 1 (TEAM SELECT) & STAGE 2 (DRIVER CAREER)
+   PAGE 1: TEAM SELECTION (PURE CONSTRUCTOR SELECT)
    ========================================================================== */
 
 .f1-career-lobby {
@@ -134,7 +130,7 @@ html, body {
   background: transparent;
 }
 
-/* STAGE 1: Team Title & Metadata */
+/* Top-Left: Team Title & Metadata */
 .team-header-panel {
   display: flex;
   flex-direction: column;
@@ -194,7 +190,7 @@ html, body {
   color: #FFF;
 }
 
-/* STAGE 1: Top-Right Driver Comparison & Team Perks */
+/* Top-Right: Team Perks Table */
 .team-intel-panel {
   position: absolute;
   top: 36px;
@@ -202,103 +198,15 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 420px;
+  width: 400px;
   z-index: 20;
 }
 
-.driver-comparison-card {
-  background: rgba(14, 18, 26, 0.88);
-  border: 1px solid var(--f1-border);
-  border-radius: 10px;
-  padding: 12px 16px;
-  backdrop-filter: blur(16px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-
-.driver-split-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.driver-side {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.driver-side:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.driver-side.selected {
-  background: rgba(255, 255, 255, 0.14);
-  border-bottom: 2px solid var(--f1-yellow);
-}
-
-.driver-name-tag {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.driver-percent {
-  font-family: var(--font-telemetry);
-  font-size: 15px;
-  font-weight: 900;
-  color: #FFF;
-}
-
-.driver-badges-strip {
-  display: flex;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.f1-stat-badge {
-  font-family: var(--font-telemetry);
-  font-size: 9px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #FFF;
-}
-
-.driver-split-bar {
-  height: 6px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  overflow: hidden;
-  display: flex;
-}
-
-.split-fill-left {
-  height: 100%;
-  background: var(--team-color, #E80020);
-  transition: width 0.4s ease;
-}
-
-.split-fill-right {
-  height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: width 0.4s ease;
-}
-
-/* Team Perks Table */
 .team-perks-card {
   background: rgba(14, 18, 26, 0.88);
   border: 1px solid var(--f1-border);
   border-radius: 10px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
@@ -321,7 +229,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
+  padding: 5px 0;
   font-size: 12px;
   font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -349,8 +257,8 @@ html, body {
 }
 
 /* ==========================================================================
-   STAGE 2: DRIVER CAREER / CONFIRM SETTINGS (MATCHING ATTACHED PHOTO)
-   ========================================================================== */
+   PAGE 2: DRIVER CAREER (CONFIRM SETTINGS / 3D DRIVER IN FRONT OF CAR)
+   ========================================================================= */
 
 .driver-career-banner {
   display: flex;
@@ -374,7 +282,7 @@ html, body {
 
 .confirm-settings-title {
   font-family: var(--font-telemetry);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 900;
   letter-spacing: 2px;
   color: #FFF;
@@ -400,7 +308,7 @@ html, body {
   right: 48px;
   background: rgba(14, 18, 26, 0.9);
   border: 1px solid var(--f1-border);
-  padding: 14px 24px;
+  padding: 16px 24px;
   border-radius: 12px;
   backdrop-filter: blur(16px);
   display: flex;
@@ -411,7 +319,7 @@ html, body {
 }
 
 .driver-lead-name {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 1px;
   color: #FFF;
@@ -424,19 +332,28 @@ html, body {
   letter-spacing: 1px;
 }
 
-/* Bottom Bar */
-.lobby-bottom-bar {
-  display: flex;
-  width: 100%;
-  z-index: 20;
+.driver-lead-team {
+  font-family: var(--font-telemetry);
+  font-size: 10px;
+  color: var(--f1-muted);
+  letter-spacing: 1.5px;
+  margin-top: 2px;
 }
 
-.stage-bottom-group {
+/* Bottom Bar */
+.lobby-bottom-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  z-index: 20;
   gap: 20px;
+}
+
+.driver-page-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* Horizontal Team Carbon Ribbon */
@@ -504,7 +421,7 @@ html, body {
   color: #FFF;
 }
 
-/* Stage 2 Driver Toggles */
+/* Driver Switch Toggles */
 .driver-switch-toggles {
   display: flex;
   gap: 12px;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Formula 1 Grand Prix Portfolio | Monza Experience</title>
-  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team and driver, race at Monza with 20 cars on the grid, and enter the Paddock engineering workstation." />
+  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team, select your driver, race at Monza with 20 cars on the grid, and enter the Paddock engineering workstation." />
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,105 +26,104 @@
     <span id="sound-text">AUDIO ON</span>
   </button>
 
-  <!-- ================= LOBBY: STAGE 1 (TEAM SELECT) & STAGE 2 (DRIVER CAREER) ================= -->
-  <div id="lobby-screen" class="screen-overlay active f1-career-lobby">
-    
-    <!-- STAGE 1 HEADER (TEAM SELECT) -->
-    <div id="stage-1-header" class="stage-section">
-      <div class="team-header-panel">
-        <div class="team-select-pill">TEAM SELECT</div>
-        <h1 class="team-main-title" id="lobby-team-title">SCUDERIA FERRARI HP</h1>
-        <div class="team-meta-row" id="lobby-team-meta">
-          <div class="meta-item">
-            <span class="meta-label">Team Principal</span>
-            <span class="meta-val" id="meta-principal">FRÉDÉRIC VASSEUR</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Chassis</span>
-            <span class="meta-val" id="meta-chassis">SF-25</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Base</span>
-            <span class="meta-val" id="meta-base">MARANELLO, ITALY</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Engine Supplier</span>
-            <span class="meta-val" id="meta-engine">FERRARI</span>
-          </div>
+  <!-- =========================================================================
+       PAGE 1: TEAM SELECTION (PURE CONSTRUCTOR SELECT)
+       ========================================================================= -->
+  <div id="page-team-select" class="screen-overlay active f1-career-lobby">
+    <!-- Top-Left: Team Title & Factory Metadata -->
+    <div class="team-header-panel">
+      <div class="team-select-pill">TEAM SELECT</div>
+      <h1 class="team-main-title" id="lobby-team-title">SCUDERIA FERRARI HP</h1>
+      <div class="team-meta-row" id="lobby-team-meta">
+        <div class="meta-item">
+          <span class="meta-label">Team Principal</span>
+          <span class="meta-val" id="meta-principal">FRÉDÉRIC VASSEUR</span>
         </div>
-      </div>
-
-      <!-- Top-Right: Driver Comparison & R&D Perks Panel -->
-      <div class="team-intel-panel">
-        <div class="driver-comparison-card" id="driver-comparison-card"></div>
-        <div class="team-perks-card">
-          <div class="perks-header">
-            <span class="col-perk">Perk</span>
-            <span class="col-rec">Recognition</span>
-          </div>
-          <div class="perks-list" id="lobby-perks-list"></div>
+        <div class="meta-item">
+          <span class="meta-label">Chassis</span>
+          <span class="meta-val" id="meta-chassis">SF-25</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Base</span>
+          <span class="meta-val" id="meta-base">MARANELLO, ITALY</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Engine Supplier</span>
+          <span class="meta-val" id="meta-engine">FERRARI</span>
         </div>
       </div>
     </div>
 
-    <!-- STAGE 2 HEADER (CONFIRM SETTINGS / DRIVER CAREER - MATCHING PHOTO) -->
-    <div id="stage-2-header" class="stage-section hidden">
-      <div class="driver-career-banner">
-        <div class="driver-career-pill">DRIVER CAREER</div>
-        <h1 class="confirm-settings-title">CONFIRM SETTINGS</h1>
-        <p class="driver-select-hint">Click driver or use buttons below to swap lead driver</p>
-      </div>
-
-      <!-- Selected Driver Card Float -->
-      <div class="selected-driver-spec-card" id="selected-driver-spec-card">
-        <div class="driver-lead-name" id="lead-driver-name">LECLERC Charles</div>
-        <div class="driver-lead-stats" id="lead-driver-stats">#16 • MONACO • 8 WINS • 41 PODIUMS</div>
+    <!-- Top-Right: Team R&D Perks Panel -->
+    <div class="team-intel-panel">
+      <div class="team-perks-card">
+        <div class="perks-header">
+          <span class="col-perk">Perk</span>
+          <span class="col-rec">Recognition</span>
+        </div>
+        <div class="perks-list" id="lobby-perks-list"></div>
       </div>
     </div>
 
-    <!-- Bottom Controls & Ribbon -->
+    <!-- Bottom: Team Carbon Ribbon & Next Step Button -->
     <div class="lobby-bottom-bar">
-      <!-- Stage 1: Team Carbon Ribbon -->
-      <div id="stage-1-bottom" class="stage-bottom-group">
-        <div class="team-carbon-ribbon" id="team-carbon-ribbon"></div>
-        <button id="goto-driver-btn" class="f1-continue-btn">
-          <span class="btn-controller-glyph">Ⓕ</span>
-          <span class="btn-continue-text">CHOOSE DRIVER ➔</span>
-        </button>
+      <div class="team-carbon-ribbon" id="team-carbon-ribbon"></div>
+      <button id="confirm-team-btn" class="f1-continue-btn">
+        <span class="btn-controller-glyph">Ⓕ</span>
+        <span class="btn-continue-text">SELECT CONSTRUCTOR ➔</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 2: DRIVER SELECTION (CONFIRM SETTINGS / 3D DRIVER IN FRONT OF CAR)
+       ========================================================================= -->
+  <div id="page-driver-select" class="screen-overlay hidden f1-career-lobby">
+    <!-- Top-Left: Driver Career Header -->
+    <div class="driver-career-banner">
+      <div class="driver-career-pill">DRIVER CAREER</div>
+      <h1 class="confirm-settings-title">CONFIRM SETTINGS</h1>
+      <p class="driver-select-hint">Select your lead driver to take the front position</p>
+    </div>
+
+    <!-- Top-Right: Selected Driver Bio & Telemetry Card -->
+    <div class="selected-driver-spec-card" id="selected-driver-spec-card">
+      <div class="driver-lead-name" id="lead-driver-name">LECLERC Charles</div>
+      <div class="driver-lead-stats" id="lead-driver-stats">#16 • MONACO • 8 WINS • 41 PODIUMS</div>
+      <div class="driver-lead-team" id="lead-driver-team">SCUDERIA FERRARI HP</div>
+    </div>
+
+    <!-- Bottom: Back Button, Driver Switch Toggles & Race Start -->
+    <div class="lobby-bottom-bar driver-page-bottom">
+      <button id="back-to-team-btn" class="f1-back-btn">
+        <span class="btn-back-glyph">Ⓑ</span>
+        <span>BACK TO TEAMS</span>
+      </button>
+
+      <div class="driver-switch-toggles" id="driver-switch-toggles">
+        <!-- Injected via JS -->
       </div>
 
-      <!-- Stage 2: Driver Selection Controls & Grid Launch -->
-      <div id="stage-2-bottom" class="stage-bottom-group hidden">
-        <button id="back-to-team-btn" class="f1-back-btn">
-          <span class="btn-back-glyph">Ⓑ</span>
-          <span>BACK TO TEAMS</span>
+      <div class="lobby-action-group">
+        <div class="f1-lights-gantry mini" id="f1-lights-gantry">
+          <div class="gantry-light" id="light-1"></div>
+          <div class="gantry-light" id="light-2"></div>
+          <div class="gantry-light" id="light-3"></div>
+          <div class="gantry-light" id="light-4"></div>
+          <div class="gantry-light" id="light-5"></div>
+        </div>
+
+        <button id="start-race-btn" class="f1-continue-btn highlight">
+          <span class="btn-controller-glyph">Ⓐ</span>
+          <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
         </button>
-
-        <div class="driver-switch-toggles" id="driver-switch-toggles">
-          <!-- Populated by JS -->
-        </div>
-
-        <div class="lobby-action-group">
-          <div class="f1-lights-gantry mini" id="f1-lights-gantry">
-            <div class="gantry-light" id="light-1"></div>
-            <div class="gantry-light" id="light-2"></div>
-            <div class="gantry-light" id="light-3"></div>
-            <div class="gantry-light" id="light-4"></div>
-            <div class="gantry-light" id="light-5"></div>
-          </div>
-
-          <button id="start-race-btn" class="f1-continue-btn highlight">
-            <span class="btn-controller-glyph">Ⓐ</span>
-            <span class="btn-continue-text">ENTER MONZA GRID (20 CARS) ➔</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
 
   <!-- ================= IN-GAME COCKPIT & RACE HUD ================= -->
   <div id="race-hud" class="screen-overlay hidden">
-    <!-- Top Left: F1 Race Leaderboard Tower (Full 20 Driver grid) -->
+    <!-- Top Left: F1 Race Leaderboard Tower -->
     <div class="f1-leaderboard-tower">
       <div class="tower-header">
         <span class="f1-mini-logo">F1®</span>
@@ -163,7 +162,7 @@
       </div>
     </div>
 
-    <!-- Top Center Notification / Radio Banner -->
+    <!-- Top Center Radio Banner -->
     <div id="radio-banner" class="radio-banner hidden">
       <div class="radio-icon">📻</div>
       <div class="radio-text" id="radio-text">"Box Box, Head to the Paddock!"</div>
@@ -181,7 +180,6 @@
 
     <!-- Bottom Center: F1 Tachometer & Telemetry Gauge (Cockpit Match) -->
     <div class="f1-tachometer-hud">
-      <!-- RPM Lights Bar -->
       <div class="rpm-shift-lights" id="rpm-shift-lights">
         <span class="rpm-led green"></span>
         <span class="rpm-led green"></span>
@@ -310,8 +308,8 @@
 
             <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="profile-card linkedin">
               <div class="card-header">
-                <div class="card-icon">💼</div>
                 <div class="card-info">
+                  <div class="card-icon">💼</div>
                   <h4>LinkedIn</h4>
                   <span>Professional Network</span>
                 </div>

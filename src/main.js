@@ -19,7 +19,7 @@ class F1PortfolioApp {
   constructor() {
     this.canvas = document.getElementById('webgl-canvas');
     this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock'
-    this.lobbyStage = 1; // 1 = Team Select, 2 = Driver Career
+    this.lobbyPage = 1; // 1 = Team Select, 2 = Driver Select
 
     this.selectedTeam = F1_TEAMS[0];
     this.selectedDriver = this.selectedTeam.drivers[0];
@@ -142,25 +142,27 @@ class F1PortfolioApp {
     this.scene.add(this.f1Car.group);
     this.f1Car.group.position.set(0, 0, 0);
 
-    // 4. Build 3D Drivers in Showroom (Matching User's Photo!)
+    // 4. Build 3D Drivers for Page 2 (Driver Selection)
     const d1 = this.selectedTeam.drivers[0];
     const d2 = this.selectedTeam.drivers[1];
 
     this.driver1Char = new DriverCharacter(d1, this.selectedTeam, true);
-    this.driver1Char.group.position.set(-0.65, 0, 2.0); // Foreground front
+    this.driver1Char.group.position.set(-0.65, 0, 2.1); // Foreground front
     this.driver1Char.group.rotation.y = 0.15;
+    this.driver1Char.group.visible = false; // Hidden on Page 1 (Team select)
     this.scene.add(this.driver1Char.group);
 
     this.driver2Char = new DriverCharacter(d2, this.selectedTeam, false);
     this.driver2Char.group.position.set(1.9, 0, 0.6); // Midground right
     this.driver2Char.group.rotation.y = -0.25;
+    this.driver2Char.group.visible = false; // Hidden on Page 1
     this.scene.add(this.driver2Char.group);
   }
 
   setupUI() {
     this.lobbyUI = new LobbyUI(
       (team, driver) => this.startRace(team, driver),
-      (team, driver, stage) => this.onTeamChange(team, driver, stage),
+      (team, driver, pageNum) => this.onTeamChange(team, driver, pageNum),
       (driver) => this.onDriverChange(driver),
       this.soundManager
     );
@@ -191,10 +193,10 @@ class F1PortfolioApp {
     }
   }
 
-  onTeamChange(team, driver, stage = 1) {
+  onTeamChange(team, driver, pageNum = 1) {
     this.selectedTeam = team;
     this.selectedDriver = driver || team.drivers[0];
-    this.lobbyStage = stage;
+    this.lobbyPage = pageNum;
 
     // Update car livery
     this.f1Car.updateTeam(team);
@@ -211,7 +213,14 @@ class F1PortfolioApp {
     if (this.driver1Char) this.driver1Char.updateTeamAndDriver(d1, team);
     if (this.driver2Char) this.driver2Char.updateTeamAndDriver(d2, team);
 
-    this.syncDriverPositions();
+    // Visibility based on Page 1 (Team Select) vs Page 2 (Driver Select)
+    const isDriverPage = (pageNum === 2);
+    if (this.driver1Char) this.driver1Char.group.visible = isDriverPage;
+    if (this.driver2Char) this.driver2Char.group.visible = isDriverPage;
+
+    if (isDriverPage) {
+      this.syncDriverPositions();
+    }
   }
 
   onDriverChange(driver) {
@@ -230,17 +239,17 @@ class F1PortfolioApp {
     const posBack = { x: 1.9, y: 0, z: 0.6, rotY: -0.25 };
 
     if (isDriver1Lead) {
-      gsap.to(this.driver1Char.group.position, { ...posFront, duration: 0.6, ease: 'power2.out' });
-      gsap.to(this.driver1Char.group.rotation, { y: posFront.rotY, duration: 0.6 });
+      gsap.to(this.driver1Char.group.position, { ...posFront, duration: 0.5, ease: 'power2.out' });
+      gsap.to(this.driver1Char.group.rotation, { y: posFront.rotY, duration: 0.5 });
 
-      gsap.to(this.driver2Char.group.position, { ...posBack, duration: 0.6, ease: 'power2.out' });
-      gsap.to(this.driver2Char.group.rotation, { y: posBack.rotY, duration: 0.6 });
+      gsap.to(this.driver2Char.group.position, { ...posBack, duration: 0.5, ease: 'power2.out' });
+      gsap.to(this.driver2Char.group.rotation, { y: posBack.rotY, duration: 0.5 });
     } else {
-      gsap.to(this.driver2Char.group.position, { ...posFront, duration: 0.6, ease: 'power2.out' });
-      gsap.to(this.driver2Char.group.rotation, { y: posFront.rotY, duration: 0.6 });
+      gsap.to(this.driver2Char.group.position, { ...posFront, duration: 0.5, ease: 'power2.out' });
+      gsap.to(this.driver2Char.group.rotation, { y: posFront.rotY, duration: 0.5 });
 
-      gsap.to(this.driver1Char.group.position, { ...posBack, duration: 0.6, ease: 'power2.out' });
-      gsap.to(this.driver1Char.group.rotation, { y: posBack.rotY, duration: 0.6 });
+      gsap.to(this.driver1Char.group.position, { ...posBack, duration: 0.5, ease: 'power2.out' });
+      gsap.to(this.driver1Char.group.rotation, { y: posBack.rotY, duration: 0.5 });
     }
   }
 
@@ -249,7 +258,7 @@ class F1PortfolioApp {
     this.selectedDriver = driver;
     this.gameState = 'racing';
 
-    // Hide showroom 3D drivers
+    // Hide showroom 3D drivers during race
     if (this.driver1Char) this.driver1Char.group.visible = false;
     if (this.driver2Char) this.driver2Char.group.visible = false;
 
@@ -257,7 +266,7 @@ class F1PortfolioApp {
     const playerSlotIndex = 2; // P3 Grid Box
     this.gridManager.buildGrid(team, driver, playerSlotIndex);
 
-    // 2. Position Player Car in their designated grid box
+    // 2. Position Player Car in designated grid box
     const slot = this.gridManager.getPlayerGridSlot(playerSlotIndex);
     this.physics.resetPosition(slot.x, slot.y, slot.z, slot.heading);
     this.f1Car.group.position.copy(this.physics.position);
@@ -310,15 +319,11 @@ class F1PortfolioApp {
     this.paddockHUD.hide();
     this.gridManager.clearGrid();
 
-    if (this.driver1Char) this.driver1Char.group.visible = true;
-    if (this.driver2Char) this.driver2Char.group.visible = true;
-
     this.lobbyUI.show();
     this.cameraController.setMode('showroom');
     this.physics.resetPosition(0, 0, 0, 0);
     this.f1Car.group.position.set(0, 0, 0);
     this.f1Car.group.rotation.set(0, 0, 0);
-    this.syncDriverPositions();
   }
 
   resetCarToTrack() {
@@ -384,7 +389,6 @@ class F1PortfolioApp {
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
       if (this.gameState === 'racing') {
-        // Steering wheel paddock button
         const intersects = this.raycaster.intersectObjects(this.f1Car.group.children, true);
         for (let hit of intersects) {
           if (hit.object.name === 'STEERING_PADDOCK_BTN' || hit.object.parent?.name === 'STEERING_PADDOCK_BTN') {
@@ -392,8 +396,7 @@ class F1PortfolioApp {
             break;
           }
         }
-      } else if (this.gameState === 'lobby') {
-        // Click on 3D driver character to select him
+      } else if (this.gameState === 'lobby' && this.lobbyPage === 2) {
         if (this.driver1Char && this.driver2Char) {
           const hitD1 = this.raycaster.intersectObjects(this.driver1Char.group.children, true);
           const hitD2 = this.raycaster.intersectObjects(this.driver2Char.group.children, true);
@@ -419,7 +422,6 @@ class F1PortfolioApp {
     const dt = this.clock.getDelta();
 
     if (this.gameState === 'racing') {
-      // 1. Process Inputs
       let throttle = this.keys.forward ? 1 : 0;
       let brake = this.keys.backward ? 1 : 0;
       let steer = 0;
@@ -429,11 +431,9 @@ class F1PortfolioApp {
       this.physics.setInputs(throttle, brake, steer, this.keys.boost);
       this.physics.update(dt, this.soundManager);
 
-      // 2. Synchronize Player 3D Car
       this.f1Car.group.position.copy(this.physics.position);
       this.f1Car.group.rotation.y = this.physics.heading;
 
-      // 3. Update Car Animations & Steering Wheel LCD screen
       const speedKmH = this.physics.velocity.length() * 3.6;
       const rpmRatio = (this.physics.rpm - this.physics.idleRpm) / (this.physics.maxRpm - this.physics.idleRpm);
       this.f1Car.update(this.physics.currentSteer, speedKmH / 300, this.physics.isDrsOpen);
@@ -445,13 +445,9 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      // 4. Update 19 AI Cars on the Starting Grid & Track
       this.gridManager.update(dt, this.physics.position);
-
-      // 5. Update Telemetry HUD
       this.telemetryHUD.update(this.physics, this.monzaTrack);
 
-      // 6. Sunlight follows car
       this.dirLight.position.set(
         this.physics.position.x + 80,
         150,
@@ -460,15 +456,11 @@ class F1PortfolioApp {
       this.dirLight.target = this.f1Car.group;
     }
 
-    // Camera update
     this.cameraController.update(this.f1Car.group, this.physics, dt);
-
-    // Render 3D Scene
     this.renderer.render(this.scene, this.camera);
   }
 }
 
-// Start
 window.addEventListener('DOMContentLoaded', () => {
   new F1PortfolioApp();
 });
