@@ -23,7 +23,7 @@ export class TelemetryHUD {
 
     // Minimap
     this.minimapCanvas = document.getElementById('minimap-canvas');
-    this.minimapCtx = this.minimapCanvas.getContext('2d');
+    this.minimapCtx = this.minimapCanvas ? this.minimapCanvas.getContext('2d') : null;
 
     // Buttons
     this.paddockBtn = document.getElementById('hud-paddock-btn');
@@ -38,6 +38,7 @@ export class TelemetryHUD {
     this.maxLaps = 60;
     this.lapStartTime = 0;
     this.bestLapTime = 81.046; // Monza record ~1:21.046
+    this.playerTeamColor = '#E80020';
 
     this.setupListeners();
   }
@@ -74,19 +75,19 @@ export class TelemetryHUD {
   initRace(team, driver) {
     this.currentLap = 1;
     this.lapStartTime = Date.now();
+    this.playerTeamColor = team.color || '#E80020';
     this.updateLeaderboard(team, driver);
   }
 
   updateLeaderboard(team, driver) {
     if (!this.leaderboardListEl) return;
 
-    // Rivals List
     const rivals = [
       { name: driver.code || 'YOU', teamColor: team.color, gap: 'LEADER', isPlayer: true },
-      { name: 'TSU', teamColor: '#6692FF', gap: '+0.183' },
-      { name: 'ANT', teamColor: '#00D2BE', gap: '+0.835' },
-      { name: 'HAM', teamColor: '#E80020', gap: '+1.318' },
-      { name: 'VER', teamColor: '#3671C6', gap: '+1.719' }
+      { name: 'TSU', teamColor: '#1E40AF', gap: '+0.214' },
+      { name: 'ANT', teamColor: '#00D2BE', gap: '+0.589' },
+      { name: 'HAM', teamColor: '#E80020', gap: '+0.985' },
+      { name: 'VER', teamColor: '#162B55', gap: '+1.340' }
     ];
 
     this.leaderboardListEl.innerHTML = '';
@@ -121,7 +122,7 @@ export class TelemetryHUD {
     if (this.modeEl) this.modeEl.textContent = physics.engineMode;
     if (this.ersPercentEl) this.ersPercentEl.textContent = `${battery}%`;
 
-    // ERS SVG Ring offset
+    // ERS Ring
     if (this.ersRingEl) {
       const circumference = 175.9;
       const offset = circumference - (battery / 100) * circumference;
@@ -155,7 +156,7 @@ export class TelemetryHUD {
       this.lapCounterEl.innerHTML = `${this.currentLap} <span class="lap-total">/ ${this.maxLaps}</span>`;
     }
 
-    // Render Minimap
+    // Render Clean Monza Minimap
     this.renderMinimap(physics.position, monzaTrack);
   }
 
@@ -167,45 +168,73 @@ export class TelemetryHUD {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Map bounds: Monza spans X: -70 to 350, Z: -470 to 630
-    const minX = -80, maxX = 360;
-    const minZ = -480, maxZ = 640;
+    // Exact Monza Spline Bounds: X: -500 to 100, Z: -650 to 700
+    const minX = -500, maxX = 90;
+    const minZ = -650, maxZ = 700;
 
-    const mapX = (x) => 20 + ((x - minX) / (maxX - minX)) * (w - 40);
-    const mapY = (z) => h - 20 - ((z - minZ) / (maxZ - minZ)) * (h - 40);
+    // Coordinate mapping to 2D canvas (Rotated/aligned to match official F1 broadcast diagram)
+    const mapX = (x, z) => 24 + ((z - minZ) / (maxZ - minZ)) * (w - 48);
+    const mapY = (x, z) => h - 20 - ((x - minX) / (maxX - minX)) * (h - 40);
 
-    // Draw Track Line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 3;
+    const points = monzaTrack.curve.getPoints(120);
+
+    // 1. Draw Clean Track Glow
+    ctx.strokeStyle = 'rgba(0, 210, 190, 0.2)';
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
-
-    const points = monzaTrack.curve.getPoints(100);
     points.forEach((p, i) => {
-      const px = mapX(p.x);
-      const py = mapY(p.z);
+      const px = mapX(p.x, p.z);
+      const py = mapY(p.x, p.z);
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     });
     ctx.closePath();
     ctx.stroke();
 
-    // Draw Player Dot
-    const pX = mapX(playerPos.x);
-    const pY = mapY(playerPos.z);
+    // 2. Draw Clean Solid White Track Silhouette (Matching User Photo)
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const px = mapX(p.x, p.z);
+      const py = mapY(p.x, p.z);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.stroke();
 
-    // Pulsing outer ring
-    ctx.fillStyle = 'rgba(232, 0, 32, 0.4)';
+    // 3. Draw Checkered Start/Finish Line Indicator
+    const startPoint = points[0];
+    const sX = mapX(startPoint.x, startPoint.z);
+    const sY = mapY(startPoint.x, startPoint.z);
+    ctx.strokeStyle = '#FFF200';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(sX - 4, sY - 4);
+    ctx.lineTo(sX + 4, sY + 4);
+    ctx.stroke();
+
+    // 4. Draw Player Live Beacon
+    const pX = mapX(playerPos.x, playerPos.z);
+    const pY = mapY(playerPos.x, playerPos.z);
+
+    // Glowing Radar Ping
+    ctx.fillStyle = `${this.playerTeamColor}55`;
     ctx.beginPath();
     ctx.arc(pX, pY, 7, 0, Math.PI * 2);
     ctx.fill();
 
-    // Core player dot
-    ctx.fillStyle = '#E80020';
+    // Core Beacon
+    ctx.fillStyle = this.playerTeamColor;
     ctx.beginPath();
     ctx.arc(pX, pY, 4, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 
   showRadioMessage(text, duration = 3500) {

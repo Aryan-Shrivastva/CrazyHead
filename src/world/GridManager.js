@@ -4,6 +4,7 @@ import { F1Car } from '../vehicle/F1Car.js';
 
 /**
  * Starting Grid Manager: Generates 20 F1 Cars on the Monza Grid in Official Staggered Order
+ * Features competitive AI racing physics with realistic launch acceleration and corner braking.
  */
 export class GridManager {
   constructor(scene, monzaTrack) {
@@ -17,10 +18,10 @@ export class GridManager {
   }
 
   calculateGridSlots() {
-    // 20 Staggered starting grid boxes along the Rettifilo main straight (Z: 50 down to -102)
-    const startZ = 50; // Finish line area
-    const rowGap = 8.0; // Distance between grid slots
-    const xOffset = 2.8; // Left / Right staggered offset
+    // 20 Staggered starting grid boxes along the Rettifilo main straight (Z: 0 down to -160)
+    const startZ = -10; // P1 position just behind Start/Finish line
+    const rowGap = 8.0; // Distance between grid rows
+    const xOffset = 2.6; // Left / Right staggered offset
 
     for (let i = 0; i < 20; i++) {
       const isLeft = i % 2 === 0;
@@ -31,10 +32,9 @@ export class GridManager {
   }
 
   buildGrid(playerTeam, playerDriver, playerPosIndex = 2) {
-    // Clear any previous AI grid cars
     this.clearGrid();
 
-    // Compile list of all 20 drivers across 10 teams
+    // Compile list of all 20 drivers
     const allRoster = [];
     F1_TEAMS.forEach(team => {
       team.drivers.forEach(driver => {
@@ -42,7 +42,7 @@ export class GridManager {
       });
     });
 
-    // Remove player's selected driver
+    // Filter out player driver
     const rivalDrivers = allRoster.filter(
       r => !(r.team.id === playerTeam.id && r.driver.id === playerDriver.id)
     );
@@ -51,7 +51,6 @@ export class GridManager {
     let rivalIndex = 0;
     for (let slotIndex = 0; slotIndex < 20; slotIndex++) {
       if (slotIndex === playerPosIndex) {
-        // Player's grid slot
         continue;
       }
 
@@ -59,12 +58,14 @@ export class GridManager {
         const rival = rivalDrivers[rivalIndex];
         const slot = this.gridSlots[slotIndex];
 
-        // Create 3D Car
         const aiCar = new F1Car(rival.team);
         aiCar.group.position.set(slot.x, slot.y, slot.z);
         aiCar.group.rotation.y = slot.heading;
 
         this.scene.add(aiCar.group);
+
+        // Find initial normalized track progress based on grid slot Z
+        const nearest = this.monzaTrack.getNearestTrackPoint(new THREE.Vector3(slot.x, 0, slot.z));
 
         this.gridCars.push({
           car: aiCar,
@@ -72,10 +73,10 @@ export class GridManager {
           driver: rival.driver,
           slot: slotIndex + 1,
           position: new THREE.Vector3(slot.x, slot.y, slot.z),
-          velocity: new THREE.Vector3(0, 0, 0),
-          progress: (slot.z + 460) / 1000, // Normalized track progress
-          speed: 0,
-          targetSpeed: 65 + Math.random() * 25 // Variable AI top speed
+          progress: nearest.u || 0.01,
+          speed: 0, // Starts at 0 km/h
+          baseTargetSpeed: 42 + (20 - slotIndex) * 0.6 + Math.random() * 3, // Paced between ~155 - 195 km/h
+          currentSteer: 0
         });
 
         rivalIndex++;
@@ -93,30 +94,41 @@ export class GridManager {
 
   update(dt, playerPos) {
     if (!this.isRaceStarted) {
-      // Pre-race idle revving: slight wheel vibration & rain light blinking
+      // Pre-race idle revving vibration
       const t = Date.now() * 0.01;
       this.gridCars.forEach((item, idx) => {
-        item.car.group.position.y = 0.05 + Math.sin(t + idx) * 0.003;
+        item.car.group.position.y = 0.05 + Math.sin(t + idx) * 0.002;
       });
       return;
     }
 
-    // AI Race Behavior: Accelerate along the Monza track spline!
     if (!this.monzaTrack || !this.monzaTrack.curve) return;
 
     this.gridCars.forEach((ai, idx) => {
-      // Accelerate towards target speed
-      ai.speed = THREE.MathUtils.lerp(ai.speed, ai.targetSpeed, dt * 0.4);
+      // Corner braking vs Straight acceleration
+      let targetSpeed = ai.baseTargetSpeed;
+      
+      // Chicanes / tight corners in Monza spline:
+      // Turn 1 & 2 Chicane (progress ~0.10 - 0.16)
+      // Turn 4 & 5 Roggia (progress ~0.30 - 0.38)
+      // Ascari & Parabolica (progress ~0.65 - 0.75 & ~0.88 - 0.98)
+      const p = ai.progress;
+      if ((p > 0.09 && p < 0.16) || (p > 0.30 && p < 0.38) || (p > 0.65 && p < 0.74) || (p > 0.88 && p < 0.98)) {
+        targetSpeed = ai.baseTargetSpeed * 0.65; // Slow down for corners
+      }
+
+      // Smooth gradual acceleration from grid start
+      ai.speed = THREE.MathUtils.lerp(ai.speed, targetSpeed, dt * 0.6);
 
       // Advance along spline
-      ai.progress += (ai.speed * dt) / 1100;
+      ai.progress += (ai.speed * dt) / 3200;
       if (ai.progress > 1) ai.progress -= 1;
 
       const pt = this.monzaTrack.curve.getPointAt(ai.progress);
       const tangent = this.monzaTrack.curve.getTangentAt(ai.progress);
       const heading = Math.atan2(tangent.x, tangent.z);
 
-      // Add slight lateral lane offset
+      // Lateral lane offset for natural racing spread
       const laneOffset = ((idx % 3) - 1) * 2.2;
       const right = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize();
 
@@ -124,8 +136,8 @@ export class GridManager {
       ai.car.group.position.set(ai.position.x, 0.05, ai.position.z);
       ai.car.group.rotation.y = heading;
 
-      // Wheel animation
-      ai.car.update(0, ai.speed / 70, false);
+      // Rotate wheels with speed
+      ai.car.update(0, ai.speed / 50, false);
     });
   }
 

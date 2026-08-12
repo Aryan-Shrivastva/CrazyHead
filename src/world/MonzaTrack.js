@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 /**
  * Autodromo Nazionale Monza 3D Circuit Generator
- * Accurate layout with Italian tricolore curbs, asphalt shaders, DRS zones, & Start Gantry
+ * Accurate official layout matching the Monza Grand Prix circuit map with Italian tricolore curbs,
+ * start gantry, grandstands, and zero tree clipping on the track.
  */
 export class MonzaTrack {
   constructor(scene) {
@@ -24,65 +25,69 @@ export class MonzaTrack {
   }
 
   initMonzaCurve() {
-    // Key Monza Waypoints (Scaled & Normalized in X-Z space)
+    // Official Autodromo Nazionale Monza Spline Waypoints (Matching User Circuit Diagram)
     const points = [
-      // 1. Start/Finish Main Straight (Rettifilo Tribune)
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0, 180),
-      new THREE.Vector3(0, 0, 320),
-      new THREE.Vector3(0, 0, 420),
+      // 1. Rettifilo Main Start/Finish Straight (Start line at 0,0,0)
+      new THREE.Vector3(0, 0, -60),
+      new THREE.Vector3(0, 0, 0),     // Start/Finish Line
+      new THREE.Vector3(0, 0, 120),
+      new THREE.Vector3(0, 0, 240),
+      new THREE.Vector3(0, 0, 360),   // Speed Trap area
 
-      // 2. Variante del Rettifilo (Tight Chicane 1: Right then Left)
-      new THREE.Vector3(12, 0, 450),
-      new THREE.Vector3(6, 0, 475),
-      new THREE.Vector3(18, 0, 510),
+      // 2. Turns 01 & 02: Variante del Rettifilo (Tight Right-then-Left Chicane)
+      new THREE.Vector3(12, 0, 410),   // Turn 01 Right entry
+      new THREE.Vector3(6, 0, 440),    // Chicane apex
+      new THREE.Vector3(-8, 0, 470),   // Turn 02 Left exit
 
-      // 3. Curva Grande (Long sweeping high-speed right)
-      new THREE.Vector3(60, 0, 580),
-      new THREE.Vector3(120, 0, 620),
-      new THREE.Vector3(190, 0, 625),
-      new THREE.Vector3(250, 0, 590),
+      // 3. Turn 03: Curva Grande (Long sweeping high-speed curve)
+      new THREE.Vector3(-35, 0, 520),
+      new THREE.Vector3(-80, 0, 580),
+      new THREE.Vector3(-140, 0, 630),
+      new THREE.Vector3(-210, 0, 660),
+      new THREE.Vector3(-280, 0, 650),
 
-      // 4. Variante della Roggia (Chicane 2: Left then Right)
-      new THREE.Vector3(280, 0, 520),
-      new THREE.Vector3(265, 0, 470),
-      new THREE.Vector3(275, 0, 420),
+      // 4. Turns 04 & 05: Variante della Roggia (Left-then-Right Chicane)
+      new THREE.Vector3(-340, 0, 610),
+      new THREE.Vector3(-375, 0, 580), // Turn 04 Left
+      new THREE.Vector3(-385, 0, 545), // Turn 05 Right exit
 
-      // 5. Curva di Lesmo 1 & Lesmo 2
-      new THREE.Vector3(300, 0, 350),
-      new THREE.Vector3(330, 0, 280),
-      new THREE.Vector3(335, 0, 210),
-      new THREE.Vector3(310, 0, 150),
+      // 5. Turns 06 & 07: Curva di Lesmo 1 & Lesmo 2
+      new THREE.Vector3(-420, 0, 480), // Turn 06 Lesmo 1
+      new THREE.Vector3(-440, 0, 410),
+      new THREE.Vector3(-445, 0, 330), // Turn 07 Lesmo 2
+      new THREE.Vector3(-420, 0, 260),
 
-      // 6. Curva del Serraglio & Straight towards Ascari
-      new THREE.Vector3(260, 0, 90),
-      new THREE.Vector3(220, 0, 20),
-      new THREE.Vector3(190, 0, -60),
+      // 6. Curva del Serraglio & Long Diagonal Straight towards Ascari
+      new THREE.Vector3(-360, 0, 170),
+      new THREE.Vector3(-290, 0, 80),
+      new THREE.Vector3(-210, 0, -20),
+      new THREE.Vector3(-140, 0, -110),
 
-      // 7. Variante Ascari (Fast Left-Right-Left sequence)
-      new THREE.Vector3(160, 0, -120),
-      new THREE.Vector3(180, 0, -165),
-      new THREE.Vector3(150, 0, -210),
+      // 7. Turns 08, 09, 10: Variante Ascari (Fast Left-Right-Left sequence)
+      new THREE.Vector3(-85, 0, -180), // Turn 08 Left entry
+      new THREE.Vector3(-60, 0, -220), // Turn 09 Right apex
+      new THREE.Vector3(-45, 0, -260), // Turn 10 Left exit
 
-      // 8. Rettifilo Posteriore (Back Straight)
-      new THREE.Vector3(110, 0, -280),
-      new THREE.Vector3(70, 0, -360),
-      new THREE.Vector3(40, 0, -420),
+      // 8. Rettifilo Posteriore (Back Straight towards Parabolica)
+      new THREE.Vector3(-40, 0, -340),
+      new THREE.Vector3(-40, 0, -430),
+      new THREE.Vector3(-40, 0, -510),
 
-      // 9. Curva Parabolica / Curva Alboreto (Sweeping 180° right back to start)
-      new THREE.Vector3(0, 0, -460),
-      new THREE.Vector3(-45, 0, -430),
-      new THREE.Vector3(-65, 0, -360),
-      new THREE.Vector3(-60, 0, -260),
-      new THREE.Vector3(-35, 0, -150),
-      new THREE.Vector3(-10, 0, -60)
+      // 9. Turn 11: Curva Parabolica / Curva Alboreto (180° long sweeping right back to main straight)
+      new THREE.Vector3(-30, 0, -570), // Entry
+      new THREE.Vector3(0, 0, -610),   // Mid apex
+      new THREE.Vector3(45, 0, -590),
+      new THREE.Vector3(65, 0, -530),  // Exit sweep
+      new THREE.Vector3(55, 0, -430),
+      new THREE.Vector3(35, 0, -300),
+      new THREE.Vector3(15, 0, -170)
     ];
 
     this.curve = new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.15);
   }
 
   buildTrackRibbon() {
-    const numPoints = 600;
+    const numPoints = 800;
     const sampledPoints = this.curve.getSpacedPoints(numPoints);
 
     const trackGeom = new THREE.BufferGeometry();
@@ -107,7 +112,7 @@ export class MonzaTrack {
       vertices.push(leftPos.x, leftPos.y + 0.02, leftPos.z);
       vertices.push(rightPos.x, rightPos.y + 0.02, rightPos.z);
 
-      const v = (i / numPoints) * 40;
+      const v = (i / numPoints) * 50;
       uvs.push(0, v);
       uvs.push(1, v);
 
@@ -141,7 +146,7 @@ export class MonzaTrack {
 
   buildItalianCurbs() {
     // Monza Italian Tricolore Curbs (Red, White, Green)
-    const curbSegments = 300;
+    const curbSegments = 320;
     const curbWidth = 1.2;
     const halfTrack = this.trackWidth / 2;
 
@@ -183,8 +188,8 @@ export class MonzaTrack {
   }
 
   buildStartGantryAndGrid() {
-    // Start / Finish Line Grid Markings on Main Straight
-    const gridLineGeo = new THREE.PlaneGeometry(this.trackWidth * 0.85, 1.2);
+    // Start / Finish Line Grid Markings on Main Straight (at Z = 0)
+    const gridLineGeo = new THREE.PlaneGeometry(this.trackWidth * 0.85, 1.4);
     gridLineGeo.rotateX(-Math.PI / 2);
     const gridMat = new THREE.MeshStandardMaterial({
       color: 0xFFFFFF,
@@ -192,7 +197,7 @@ export class MonzaTrack {
     });
 
     const finishLine = new THREE.Mesh(gridLineGeo, gridMat);
-    finishLine.position.set(0, 0.03, 50);
+    finishLine.position.set(0, 0.03, 0);
     this.trackGroup.add(finishLine);
 
     // Starting Gantry Structure overhead (with 5 Red Lights)
@@ -200,24 +205,24 @@ export class MonzaTrack {
     const gantryMat = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, metalness: 0.8, roughness: 0.3 });
 
     const leftPillar = new THREE.Mesh(gantryPillarGeo, gantryMat);
-    leftPillar.position.set(-this.trackWidth / 2 - 2, 3.5, 50);
+    leftPillar.position.set(-this.trackWidth / 2 - 2, 3.5, 0);
     this.trackGroup.add(leftPillar);
 
     const rightPillar = new THREE.Mesh(gantryPillarGeo, gantryMat);
-    rightPillar.position.set(this.trackWidth / 2 + 2, 3.5, 50);
+    rightPillar.position.set(this.trackWidth / 2 + 2, 3.5, 0);
     this.trackGroup.add(rightPillar);
 
     // Cross beam
     const beamGeo = new THREE.BoxGeometry(this.trackWidth + 6, 0.8, 0.8);
     const beam = new THREE.Mesh(beamGeo, gantryMat);
-    beam.position.set(0, 7.0, 50);
+    beam.position.set(0, 7.0, 0);
     this.trackGroup.add(beam);
 
     // 5 Red Lights Pod
     const lightBoxGeo = new THREE.BoxGeometry(6.0, 1.2, 0.6);
     const lightBoxMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
     const lightBox = new THREE.Mesh(lightBoxGeo, lightBoxMat);
-    lightBox.position.set(0, 6.2, 50);
+    lightBox.position.set(0, 6.2, 0);
     this.trackGroup.add(lightBox);
 
     // 5 Red Emissive Bulbs
@@ -229,30 +234,30 @@ export class MonzaTrack {
         emissiveIntensity: 1.5
       });
       const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-      bulb.position.set(-2.0 + i * 1.0, 6.2, 49.6);
+      bulb.position.set(-2.0 + i * 1.0, 6.2, -0.4);
       this.trackGroup.add(bulb);
     }
   }
 
   buildTracksideProps() {
     // Grandstands along Main Rettifilo Straight
-    const standGeo = new THREE.BoxGeometry(12.0, 8.0, 120.0);
+    const standGeo = new THREE.BoxGeometry(12.0, 8.0, 140.0);
     const standMat = new THREE.MeshStandardMaterial({
       color: 0x8E9BAE,
       roughness: 0.7
     });
 
     const leftGrandstand = new THREE.Mesh(standGeo, standMat);
-    leftGrandstand.position.set(-22, 4.0, 100);
+    leftGrandstand.position.set(-22, 4.0, 50);
     leftGrandstand.castShadow = true;
     this.trackGroup.add(leftGrandstand);
 
-    // Distance Brake Marker Boards (300m, 200m, 100m, 50m)
+    // Distance Brake Marker Boards for Turn 1 Chicane
     const markerDistances = [
-      { z: 350, text: '300' },
-      { z: 380, text: '200' },
-      { z: 410, text: '100' },
-      { z: 430, text: '50' }
+      { z: 250, text: '300' },
+      { z: 280, text: '200' },
+      { z: 310, text: '100' },
+      { z: 340, text: '50' }
     ];
 
     markerDistances.forEach(m => {
@@ -262,28 +267,15 @@ export class MonzaTrack {
       board.position.set(-this.trackWidth / 2 - 1.2, 0.9, m.z);
       this.trackGroup.add(board);
     });
-
-    // Pirelli / F1 Advertising Barriers
-    const barrierSegments = 80;
-    const points = this.curve.getSpacedPoints(barrierSegments);
-    const barrierMat = new THREE.MeshStandardMaterial({ color: 0x002D62, roughness: 0.4 });
-
-    for (let i = 0; i < barrierSegments; i += 4) {
-      const p = points[i];
-      const barrierGeo = new THREE.BoxGeometry(0.4, 1.2, 8.0);
-      const barrier = new THREE.Mesh(barrierGeo, barrierMat);
-      barrier.position.set(p.x + 12, 0.6, p.z);
-      this.trackGroup.add(barrier);
-    }
   }
 
   buildSurroundingTerrain() {
-    // Royal Park of Monza (Green terrain with ambient trees/foliage)
-    const terrainGeo = new THREE.PlaneGeometry(1600, 1600);
+    // Royal Park of Monza (Grass terrain)
+    const terrainGeo = new THREE.PlaneGeometry(2400, 2400);
     terrainGeo.rotateX(-Math.PI / 2);
 
     const terrainMat = new THREE.MeshStandardMaterial({
-      color: 0x1E3B20,
+      color: 0x18301B,
       roughness: 0.9,
       metalness: 0.05
     });
@@ -293,36 +285,41 @@ export class MonzaTrack {
     terrain.receiveShadow = true;
     this.trackGroup.add(terrain);
 
-    // Ambient 3D Pine / Oak Trees around Monza Park
+    // Place trees ONLY far outside the track boundaries (Minimum 45m away from any track point!)
     const treeTrunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 6, 6);
     const treeLeavesGeo = new THREE.ConeGeometry(3.5, 10, 6);
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4A2F13, roughness: 0.9 });
     const leavesMat = new THREE.MeshStandardMaterial({ color: 0x144018, roughness: 0.8 });
 
-    for (let i = 0; i < 120; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 300;
-      const x = Math.cos(angle) * dist + 100;
-      const z = Math.sin(angle) * dist + 50;
+    let placedTrees = 0;
+    for (let i = 0; i < 600 && placedTrees < 140; i++) {
+      const x = (Math.random() - 0.5) * 1600;
+      const z = (Math.random() - 0.5) * 1600;
+      const testPos = new THREE.Vector3(x, 0, z);
 
-      const treeGroup = new THREE.Group();
-      treeGroup.position.set(x, 0, z);
+      // Check distance to closest track point
+      const nearest = this.getNearestTrackPoint(testPos);
+      if (nearest.distance > 45.0) {
+        // Safe: Far away from asphalt
+        const treeGroup = new THREE.Group();
+        treeGroup.position.set(x, 0, z);
 
-      const trunk = new THREE.Mesh(treeTrunkGeo, trunkMat);
-      trunk.position.y = 3;
-      treeGroup.add(trunk);
+        const trunk = new THREE.Mesh(treeTrunkGeo, trunkMat);
+        trunk.position.y = 3;
+        treeGroup.add(trunk);
 
-      const leaves = new THREE.Mesh(treeLeavesGeo, leavesMat);
-      leaves.position.y = 8;
-      treeGroup.add(leaves);
+        const leaves = new THREE.Mesh(treeLeavesGeo, leavesMat);
+        leaves.position.y = 8;
+        treeGroup.add(leaves);
 
-      this.trackGroup.add(treeGroup);
+        this.trackGroup.add(treeGroup);
+        placedTrees++;
+      }
     }
   }
 
   getNearestTrackPoint(pos) {
-    if (!this.curve) return { point: new THREE.Vector3(), tangent: new THREE.Vector3(0, 0, 1), distance: 0 };
-    // Find closest point on spline
+    if (!this.curve) return { point: new THREE.Vector3(), tangent: new THREE.Vector3(0, 0, 1), distance: 0, u: 0 };
     const numSamples = 200;
     let closestPoint = null;
     let minDistance = Infinity;
