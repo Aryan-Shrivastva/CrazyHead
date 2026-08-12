@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Formula 1 Portfolio Experience | Monza Grand Prix</title>
+  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team and driver, race at Monza, and enter the Paddock engineering workstation." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Sound Toggle -->
+  <button id="sound-toggle" class="sound-btn" title="Toggle Sound">
+    <span id="sound-icon">🔊</span>
+    <span id="sound-text">AUDIO ON</span>
+  </button>
+
+  <!-- ================= LOBBY: TEAM & DRIVER SELECT ================= -->
+  <div id="lobby-screen" class="screen-overlay active">
+    <!-- Header -->
+    <header class="lobby-header">
+      <div class="f1-badge-container">
+        <span class="f1-logo">F1<span class="f1-dot">®</span></span>
+        <div class="f1-title-group">
+          <h1>GRAND PRIX PORTFOLIO</h1>
+          <p>AUTODROMO NAZIONALE MONZA • 60 LAPS</p>
+        </div>
+      </div>
+      <div class="season-badge">2025/2026 SEASON</div>
+    </header>
+
+    <!-- Main Selection Stage -->
+    <main class="lobby-main">
+      <!-- Left: Team Selector Carousel -->
+      <aside class="team-sidebar">
+        <h3 class="section-label">SELECT CONSTRUCTOR</h3>
+        <div id="team-list" class="team-scroll-list">
+          <!-- Populated by JS -->
+        </div>
+      </aside>
+
+      <!-- Center: 3D Car Showroom Overlay Info -->
+      <section class="showroom-center">
+        <div class="showroom-backdrop-glow" id="showroom-glow"></div>
+        <div class="car-spec-banner" id="car-spec-banner">
+          <div class="spec-team-badge" id="spec-team-badge">🐎</div>
+          <div class="spec-details">
+            <h2 id="spec-team-name">SCUDERIA FERRARI HP</h2>
+            <div class="spec-stats">
+              <span id="spec-engine">Ferrari 066/12 1.6L V6 Turbo</span>
+              <span class="divider">•</span>
+              <span id="spec-power">1020+ BHP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="view-controls-hint">
+          <span>🖱️ Click & Drag to Rotate Car</span>
+        </div>
+      </section>
+
+      <!-- Right: Driver Selector & Grid Launch -->
+      <aside class="driver-sidebar">
+        <h3 class="section-label">SELECT DRIVER</h3>
+        <div id="driver-list" class="driver-cards-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Start Grid Button & 5 Red Lights -->
+        <div class="launch-card">
+          <div class="f1-lights-gantry" id="f1-lights-gantry">
+            <div class="gantry-light" id="light-1"></div>
+            <div class="gantry-light" id="light-2"></div>
+            <div class="gantry-light" id="light-3"></div>
+            <div class="gantry-light" id="light-4"></div>
+            <div class="gantry-light" id="light-5"></div>
+          </div>
+          
+          <button id="start-race-btn" class="start-race-btn">
+            <span class="btn-shine"></span>
+            <span class="btn-content">
+              <span class="btn-flag">🏁</span>
+              <span class="btn-text">ENTER MONZA GRID</span>
+            </span>
+          </button>
+          <div class="launch-hint">Lights Out & Away We Go!</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer Controls Bar -->
+    <footer class="lobby-footer">
+      <div class="controls-guide">
+        <span class="key-tag">W / ↑</span> Accelerate
+        <span class="key-tag">S / ↓</span> Brake / Reverse
+        <span class="key-tag">A D / ← →</span> Steer
+        <span class="key-tag">SPACE</span> DRS / ERS Boost
+        <span class="key-tag">C</span> Camera View
+        <span class="key-tag">P / TAB</span> Paddock HQ
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= IN-GAME COCKPIT & RACE HUD ================= -->
+  <div id="race-hud" class="screen-overlay hidden">
+    <!-- Top Left: F1 Race Leaderboard Tower -->
+    <div class="f1-leaderboard-tower">
+      <div class="tower-header">
+        <span class="f1-mini-logo">F1®</span>
+        <span class="tower-title">RACE</span>
+      </div>
+      <div class="tower-lap-info">
+        <span class="lap-label">LAP</span>
+        <span class="lap-value" id="hud-lap-counter">1 <span class="lap-total">/ 60</span></span>
+      </div>
+      <div class="tower-drivers" id="hud-leaderboard-list">
+        <!-- Drivers dynamic ranking -->
+      </div>
+    </div>
+
+    <!-- Top Right: Sector Timing Bar -->
+    <div class="f1-timing-bar">
+      <div class="sector-boxes">
+        <div class="sector-item" id="sector-1-box">
+          <span class="sector-label">S1</span>
+          <span class="sector-time" id="sector-1-time">--.---</span>
+        </div>
+        <div class="sector-item" id="sector-2-box">
+          <span class="sector-label">S2</span>
+          <span class="sector-time" id="sector-2-time">--.---</span>
+        </div>
+        <div class="sector-item" id="sector-3-box">
+          <span class="sector-label">S3</span>
+          <span class="sector-time" id="sector-3-time">--.---</span>
+        </div>
+      </div>
+      <div class="current-lap-box">
+        <span class="time-label">LAP TIME</span>
+        <span class="current-time-display" id="hud-current-lap-time">0:00.000</span>
+      </div>
+      <div class="best-lap-box">
+        <span class="time-label">BEST</span>
+        <span class="best-time-display" id="hud-best-lap-time">1:21.046</span>
+      </div>
+    </div>
+
+    <!-- Top Center Notification / Radio Banner -->
+    <div id="radio-banner" class="radio-banner hidden">
+      <div class="radio-icon">📻</div>
+      <div class="radio-text" id="radio-text">"Box Box, Head to the Paddock!"</div>
+    </div>
+
+    <!-- Bottom Left: Track Minimap -->
+    <div class="f1-minimap-container">
+      <div class="minimap-header">AUTODROMO NAZIONALE MONZA</div>
+      <canvas id="minimap-canvas" width="220" height="150"></canvas>
+      <div class="drs-status-box" id="drs-indicator">
+        <span class="drs-label">DRS</span>
+        <span class="drs-state" id="drs-state-text">AVAILABLE</span>
+      </div>
+    </div>
+
+    <!-- Bottom Center: F1 Tachometer & Telemetry Gauge (Cockpit Match) -->
+    <div class="f1-tachometer-hud">
+      <!-- RPM Lights Bar -->
+      <div class="rpm-shift-lights" id="rpm-shift-lights">
+        <span class="rpm-led green"></span>
+        <span class="rpm-led green"></span>
+        <span class="rpm-led green"></span>
+        <span class="rpm-led red"></span>
+        <span class="rpm-led red"></span>
+        <span class="rpm-led red"></span>
+        <span class="rpm-led blue"></span>
+        <span class="rpm-led blue"></span>
+      </div>
+
+      <div class="telemetry-core">
+        <!-- Battery / ERS Gauge -->
+        <div class="gauge-ring-box">
+          <svg class="progress-ring" width="70" height="70">
+            <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.1)" stroke-width="5" fill="transparent" r="28" cx="35" cy="35"/>
+            <circle id="ers-ring" class="progress-ring-fill" stroke="#00D2BE" stroke-width="5" fill="transparent" r="28" cx="35" cy="35" stroke-dasharray="175.9" stroke-dashoffset="0"/>
+          </svg>
+          <div class="gauge-inner">
+            <span class="gauge-value" id="ers-percent">100%</span>
+            <span class="gauge-label">BATT</span>
+          </div>
+        </div>
+
+        <!-- Center Gear & Mode Display -->
+        <div class="center-gear-display">
+          <div class="gear-number" id="hud-gear">N</div>
+          <div class="engine-mode" id="hud-mode">HARVESTING</div>
+        </div>
+
+        <!-- Speed & RPM Display -->
+        <div class="speed-rpm-box">
+          <div class="speed-value" id="hud-speed">0</div>
+          <div class="speed-unit">KM/H</div>
+          <div class="rpm-value" id="hud-rpm">0 <span class="rpm-unit">RPM</span></div>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="hud-action-bar">
+        <button id="hud-paddock-btn" class="hud-btn highlight" title="Visit Team Paddock & Workstation [P]">
+          <span class="hud-btn-icon">🏢</span>
+          <span class="hud-btn-text">PADDOCK HQ</span>
+          <span class="key-shortcut">[P]</span>
+        </button>
+
+        <button id="hud-camera-btn" class="hud-btn" title="Toggle Camera View [C]">
+          <span class="hud-btn-icon">🎥</span>
+          <span class="hud-btn-text" id="cam-name-text">COCKPIT</span>
+          <span class="key-shortcut">[C]</span>
+        </button>
+
+        <button id="hud-reset-btn" class="hud-btn" title="Reset Car to Track [R]">
+          <span class="hud-btn-icon">🔄</span>
+          <span class="hud-btn-text">RESET</span>
+          <span class="key-shortcut">[R]</span>
+        </button>
+
+        <button id="hud-exit-btn" class="hud-btn" title="Return to Lobby">
+          <span class="hud-btn-icon">🚪</span>
+          <span class="hud-btn-text">LOBBY</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- On-screen Mobile Controls (for touch devices) -->
+    <div id="mobile-controls" class="mobile-touch-controls">
+      <div class="dpad-left">
+        <button id="touch-left" class="touch-btn">◀</button>
+        <button id="touch-right" class="touch-btn">▶</button>
+      </div>
+      <div class="dpad-right">
+        <button id="touch-brake" class="touch-btn brake">BRAKE</button>
+        <button id="touch-gas" class="touch-btn gas">GAS</button>
+        <button id="touch-drs" class="touch-btn boost">DRS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PADDOCK / TEAM HQ DUAL-MONITOR WORKSTATION ================= -->
+  <div id="paddock-suite" class="screen-overlay hidden">
+    <div class="paddock-backdrop"></div>
+
+    <header class="paddock-header">
+      <div class="paddock-team-info">
+        <span class="paddock-badge" id="paddock-team-badge">🐎</span>
+        <div>
+          <h2 id="paddock-team-title">SCUDERIA FERRARI HP • ENGINEERING SUITE</h2>
+          <p>DRIVER TELEMETRY & WORKSTATION COMMAND CENTER</p>
+        </div>
+      </div>
+
+      <button id="paddock-return-btn" class="return-track-btn">
+        <span class="green-flag">🟢</span>
+        <span>RETURN TO COCKPIT</span>
+      </button>
+    </header>
+
+    <main class="paddock-workstation-container">
+      <!-- Monitor 1: Competitive Profiles & Socials -->
+      <div class="paddock-monitor monitor-profiles">
+        <div class="monitor-bezel">
+          <div class="monitor-top-bar">
+            <span class="monitor-title">📊 TELEMETRY & COMPETITIVE PROFILES</span>
+            <div class="monitor-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+          </div>
+
+          <div class="monitor-content profile-cards-grid">
+            <!-- GitHub Card -->
+            <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="profile-card github">
+              <div class="card-header">
+                <div class="card-icon">🐙</div>
+                <div class="card-info">
+                  <h4>GitHub</h4>
+                  <span>@Aryan-Shrivastva</span>
+                </div>
+                <div class="external-link-arrow">↗</div>
+              </div>
+              <p class="card-desc">Repositories, open source contributions, full-stack & 3D WebGL architectures.</p>
+              <div class="card-footer-tags">
+                <span class="tag">Repositories</span>
+                <span class="tag">Commits</span>
+                <span class="tag">Open Source</span>
+              </div>
+            </a>
+
+            <!-- LinkedIn Card -->
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="profile-card linkedin">
+              <div class="card-header">
+                <div class="card-icon">💼</div>
+                <div class="card-info">
+                  <h4>LinkedIn</h4>
+                  <span>Professional Network</span>
+                </div>
+                <div class="external-link-arrow">↗</div>
+              </div>
+              <p class="card-desc">Career milestones, engineering insights, technical leadership, and connections.</p>
+              <div class="card-footer-tags">
+                <span class="tag">Network</span>
+                <span class="tag">Experience</span>
+              </div>
+            </a>
+
+            <!-- LeetCode Card -->
+            <a href="https://leetcode.com" target="_blank" rel="noopener noreferrer" class="profile-card leetcode">
+              <div class="card-header">
+                <div class="card-icon">⚡</div>
+                <div class="card-info">
+                  <h4>LeetCode</h4>
+                  <span>Problem Solver</span>
+                </div>
+                <div class="external-link-arrow">↗</div>
+              </div>
+              <p class="card-desc">Data structures, complex algorithms, graph theory, and dynamic programming mastery.</p>
+              <div class="card-footer-tags">
+                <span class="tag orange">Knight</span>
+                <span class="tag">500+ Solved</span>
+                <span class="tag">Top %</span>
+              </div>
+            </a>
+
+            <!-- CodeChef Card -->
+            <a href="https://codechef.com" target="_blank" rel="noopener noreferrer" class="profile-card codechef">
+              <div class="card-header">
+                <div class="card-icon">👨‍🍳</div>
+                <div class="card-info">
+                  <h4>CodeChef</h4>
+                  <span>Competitive Programmer</span>
+                </div>
+                <div class="external-link-arrow">↗</div>
+              </div>
+              <p class="card-desc">Global rated contests, timed challenges, and advanced mathematical computing.</p>
+              <div class="card-footer-tags">
+                <span class="tag brown">Division 1 / Star</span>
+                <span class="tag">Contest Rating</span>
+              </div>
+            </a>
+
+            <!-- Codeforces Card -->
+            <a href="https://codeforces.com" target="_blank" rel="noopener noreferrer" class="profile-card codeforces">
+              <div class="card-header">
+                <div class="card-icon">🏆</div>
+                <div class="card-info">
+                  <h4>Codeforces</h4>
+                  <span>Algorithmic Competitor</span>
+                </div>
+                <div class="external-link-arrow">↗</div>
+              </div>
+              <p class="card-desc">High-speed competitive programming rounds, problem setter, and speed rating.</p>
+              <div class="card-footer-tags">
+                <span class="tag blue">Specialist / Expert</span>
+                <span class="tag">Rated Rounds</span>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="monitor-stand"></div>
+      </div>
+
+      <!-- Monitor 2: Portfolio OS Multi-Tab Browser -->
+      <div class="paddock-monitor monitor-portfolio">
+        <div class="monitor-bezel">
+          <!-- OS Tabs Bar -->
+          <div class="os-tabs-bar">
+            <button class="os-tab active" data-tab="tab-projects">
+              <span class="tab-icon">🚀</span>
+              <span>Projects Showcase</span>
+            </button>
+            <button class="os-tab" data-tab="tab-about">
+              <span class="tab-icon">👤</span>
+              <span>About Me</span>
+            </button>
+            <button class="os-tab" data-tab="tab-skills">
+              <span class="tab-icon">🛠️</span>
+              <span>Skills & Tech Stack</span>
+            </button>
+            <button class="os-tab" data-tab="tab-contact">
+              <span class="tab-icon">📬</span>
+              <span>Contact & Resume</span>
+            </button>
+          </div>
+
+          <!-- Tab 1: Projects Showcase -->
+          <div id="tab-projects" class="os-tab-pane active">
+            <div class="pane-header">
+              <h3>FEATURED ENGINEERING PROJECTS</h3>
+              <p>Click any card to view code repository or launch the live production deployment.</p>
+            </div>
+
+            <div class="projects-list-grid">
+              <!-- Project 1 -->
+              <div class="project-card">
+                <div class="project-badge">3D WebGL / Simulation</div>
+                <h4>F1 Monza Grand Prix 3D Experience</h4>
+                <p>Interactive Formula 1 racing simulation on Monza track with realistic vehicle dynamics, Web Audio V6 engine synthesis, and paddock dual-monitor terminal.</p>
+                <div class="project-tags">
+                  <span>Three.js</span>
+                  <span>WebGL</span>
+                  <span>GSAP</span>
+                  <span>Web Audio API</span>
+                </div>
+                <div class="project-links">
+                  <a href="https://github.com/Aryan-Shrivastva/CrazyHead" target="_blank" rel="noopener noreferrer" class="proj-link code">View Code ↗</a>
+                  <a href="#" class="proj-link demo">Live Experience ↗</a>
+                </div>
+              </div>
+
+              <!-- Project 2 -->
+              <div class="project-card">
+                <div class="project-badge">Full Stack / Distributed</div>
+                <h4>High-Performance Real-Time Engine</h4>
+                <p>Low-latency websocket telemetry pipeline streaming multi-sensor telemetry data at 60hz with distributed message queues and real-time dashboard analytics.</p>
+                <div class="project-tags">
+                  <span>Node.js</span>
+                  <span>WebSockets</span>
+                  <span>Redis</span>
+                  <span>React</span>
+                </div>
+                <div class="project-links">
+                  <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="proj-link code">View Code ↗</a>
+                  <a href="#" class="proj-link demo">Live Demo ↗</a>
+                </div>
+              </div>
+
+              <!-- Project 3 -->
+              <div class="project-card">
+                <div class="project-badge">AI / Computer Vision</div>
+                <h4>Neural Vision & Telemetry Classifier</h4>
+                <p>Deep learning vision pipeline for automated track telemetry analysis, lap delta forecasting, and aerodynamic performance optimization.</p>
+                <div class="project-tags">
+                  <span>Python</span>
+                  <span>PyTorch</span>
+                  <span>FastAPI</span>
+                  <span>OpenCV</span>
+                </div>
+                <div class="project-links">
+                  <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="proj-link code">View Code ↗</a>
+                  <a href="#" class="proj-link demo">Demo ↗</a>
+                </div>
+              </div>
+
+              <!-- Project 4 -->
+              <div class="project-card">
+                <div class="project-badge">Systems & Architecture</div>
+                <h4>Cloud Infrastructure Orchestrator</h4>
+                <p>Automated container scaling orchestrator with zero-downtime rolling deploys, latency health probes, and cloud telemetry monitoring.</p>
+                <div class="project-tags">
+                  <span>Docker</span>
+                  <span>Kubernetes</span>
+                  <span>Go</span>
+                  <span>Prometheus</span>
+                </div>
+                <div class="project-links">
+                  <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="proj-link code">View Code ↗</a>
+                  <a href="#" class="proj-link demo">Architecture ↗</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: About Me -->
+          <div id="tab-about" class="os-tab-pane">
+            <div class="pane-header">
+              <h3>DRIVER & DEVELOPER TELEMETRY</h3>
+              <p>Passionate software engineer building high-impact web, 3D, and distributed systems.</p>
+            </div>
+            <div class="about-content-box">
+              <div class="bio-summary">
+                <p>Hello! I am a full-stack engineer and competitive programmer with a passion for high-performance computing, interactive 3D graphics, and building robust systems that scale.</p>
+                <p>Just like in Formula 1 where every millisecond counts, I engineer code with precision, clean architecture, and relentless optimization.</p>
+              </div>
+
+              <div class="driver-stats-grid">
+                <div class="stat-pill">
+                  <span class="stat-num">500+</span>
+                  <span class="stat-txt">Problems Solved</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="stat-num">60 FPS</span>
+                  <span class="stat-txt">3D Rendering</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="stat-num">100%</span>
+                  <span class="stat-txt">Dedication</span>
+                </div>
+                <div class="stat-pill">
+                  <span class="stat-num">10+</span>
+                  <span class="stat-txt">Production Projects</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Skills & Interests -->
+          <div id="tab-skills" class="os-tab-pane">
+            <div class="pane-header">
+              <h3>CORE COMPETENCIES & PIT CREW STACK</h3>
+              <p>Technologies, frameworks, and technical toolsets used to build scalable systems.</p>
+            </div>
+
+            <div class="skills-category-group">
+              <div class="skill-category">
+                <h4>Languages & Algorithms</h4>
+                <div class="skill-chips">
+                  <span class="chip">C++</span>
+                  <span class="chip">JavaScript / TypeScript</span>
+                  <span class="chip">Python</span>
+                  <span class="chip">Go</span>
+                  <span class="chip">SQL</span>
+                  <span class="chip">Data Structures & Algorithms</span>
+                </div>
+              </div>
+
+              <div class="skill-category">
+                <h4>Frontend & 3D Graphics</h4>
+                <div class="skill-chips">
+                  <span class="chip highlight">Three.js</span>
+                  <span class="chip highlight">WebGL / GLSL</span>
+                  <span class="chip">React / Next.js</span>
+                  <span class="chip">GSAP</span>
+                  <span class="chip">CSS3 / Tailwind</span>
+                  <span class="chip">HTML5 Canvas</span>
+                </div>
+              </div>
+
+              <div class="skill-category">
+                <h4>Backend & Cloud</h4>
+                <div class="skill-chips">
+                  <span class="chip">Node.js</span>
+                  <span class="chip">Express</span>
+                  <span class="chip">FastAPI</span>
+                  <span class="chip">PostgreSQL</span>
+                  <span class="chip">MongoDB</span>
+                  <span class="chip">Redis</span>
+                  <span class="chip">Docker & CI/CD</span>
+                </div>
+              </div>
+
+              <div class="skill-category">
+                <h4>Interests & Hobbies</h4>
+                <div class="skill-chips">
+                  <span class="chip">🏎️ Formula 1 & Sim Racing</span>
+                  <span class="chip">⚡ Competitive Programming</span>
+                  <span class="chip">🎮 Game Development</span>
+                  <span class="chip">🪐 Space & Physics</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Contact & Resume -->
+          <div id="tab-contact" class="os-tab-pane">
+            <div class="pane-header">
+              <h3>PIT WALL COMMUNICATIONS</h3>
+              <p>Let's collaborate, discuss new engineering opportunities, or talk racing.</p>
+            </div>
+
+            <div class="contact-card-box">
+              <div class="contact-method">
+                <span class="method-icon">📧</span>
+                <div>
+                  <h4>Direct Email</h4>
+                  <a href="mailto:contact@aryan.dev" class="contact-link">contact@aryan.dev</a>
+                </div>
+              </div>
+
+              <div class="contact-method">
+                <span class="method-icon">💼</span>
+                <div>
+                  <h4>GitHub & Code Repositories</h4>
+                  <a href="https://github.com/Aryan-Shrivastva" target="_blank" rel="noopener noreferrer" class="contact-link">github.com/Aryan-Shrivastva ↗</a>
+                </div>
+              </div>
+
+              <div class="resume-download-box">
+                <h4>Engineering Resume</h4>
+                <p>Download my updated resume covering my complete background, technical experience, and achievements.</p>
+                <a href="#download-resume" class="download-resume-btn">
+                  <span>📄 Download Resume (PDF)</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="monitor-stand"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
