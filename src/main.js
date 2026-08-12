@@ -169,8 +169,8 @@ class F1PortfolioApp {
     this.f1Car.group.position.set(0, 0, 0);
     this.showroomSpotlight.target = this.f1Car.group;
 
-    // 5. 3D Paddock Garage Workstation Room (Matching Image 2)
-    this.paddockRoom = new PaddockRoom(this.scene, () => this.returnToCockpit());
+    // 5. 3D Paddock Hospitality Truck & Workstation (Matching Images 2 & 3)
+    this.paddockRoom = new PaddockRoom(this.scene, this.cameraController, () => this.returnToCockpit());
 
     // 6. 3D Drivers for Page 2
     const d1 = this.selectedTeam.drivers[0];
@@ -494,7 +494,9 @@ class F1PortfolioApp {
     this.soundManager.playRadioChime();
     this.lobbyUI.hide();
 
-    this.cameraController.transitionToPaddock();
+    if (this.paddockRoom) {
+      this.paddockRoom.enterPaddockOverview();
+    }
   }
 
   openPaddock() {
@@ -505,7 +507,9 @@ class F1PortfolioApp {
     this.soundManager.playRadioChime();
     this.telemetryHUD.hide();
 
-    this.cameraController.transitionToPaddock();
+    if (this.paddockRoom) {
+      this.paddockRoom.enterPaddockOverview();
+    }
   }
 
   returnToCockpit() {

@@ -142,22 +142,43 @@ export class CameraController {
       this.camera.fov = 55 + Math.min((currentSpeed * 3.6) / 350, 1.0) * 12;
       this.camera.updateProjectionMatrix();
     }
-    else if (this.mode === 'paddock') {
-      // 4. 3D PADDOCK ROOM FRAMING (MATCHING EXACT PERSPECTIVE OF IMAGE 2)
-      this.camera.position.set(-0.15, 104.25, -0.2);
-      this.camera.lookAt(new THREE.Vector3(-0.15, 104.3, -3.7));
+    else if (this.mode === 'paddock_overview') {
+      // Stage 1: PADDOCK TRUCK CUTAWAY OVERVIEW (MATCHING IMAGE 2)
+      this.camera.position.set(0.4, 103.8, 4.4);
+      this.camera.lookAt(new THREE.Vector3(0.1, 103.8, -1.8));
+      this.camera.fov = 46;
+      this.camera.updateProjectionMatrix();
+    }
+    else if (this.mode === 'paddock_desk') {
+      // Stage 2: DIRECT DESK WORKSTATION ZOOM (MATCHING IMAGE 3)
+      this.camera.position.set(-0.05, 104.25, -0.2);
+      this.camera.lookAt(new THREE.Vector3(-0.05, 104.3, -3.7));
       this.camera.fov = 54;
       this.camera.updateProjectionMatrix();
     }
   }
 
-  transitionToPaddock(callback) {
-    this.mode = 'paddock';
+  transitionToPaddockOverview(callback) {
+    this.mode = 'paddock_overview';
     gsap.to(this.camera.position, {
-      x: -0.15,
+      x: 0.4,
+      y: 103.8,
+      z: 4.4,
+      duration: 1.2,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        if (callback) callback();
+      }
+    });
+  }
+
+  transitionToPaddockDesk(callback) {
+    this.mode = 'paddock_desk';
+    gsap.to(this.camera.position, {
+      x: -0.05,
       y: 104.25,
       z: -0.2,
-      duration: 1.2,
+      duration: 1.0,
       ease: 'power3.inOut',
       onComplete: () => {
         if (callback) callback();

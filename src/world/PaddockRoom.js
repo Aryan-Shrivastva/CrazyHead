@@ -1,24 +1,26 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 
 /**
- * 3D Paddock Garage Workstation Room (Pixel-Perfect Match to Miguel Iranzo Portfolio)
- * Features:
- * - Authentic 3D teal/sage workshop geometry with shadows and directional workshop lighting
- * - Left wall 3D toolboard with screwdrivers, spanners & wrenches
- * - Angled top 3D monitor with PREVIOUS / NEXT / GO BACK buttons
- * - Bottom 3D CRT television with left 🌐/🐙 icons and glowing pistachio phosphor screen showing 3D F1 truck diorama
- * - Right angled wall with 3D framed champion celebration and driver GOAT silhouette portraits
- * - Foreground 3D workbench with white keyboard, papers, and canisters
+ * Full 3D Paddock Hospitality Truck & Workstation (Pixel-Perfect Match to User Images 2 & 3)
+ * 
+ * Two Interactive Stages:
+ * - Stage 1 (Image 2): Cutaway View of the Red Hospitality Transporter Truck with top "aramco" banner,
+ *   floating 3D '@' icon, white 5-tire rack, red tool drawers, and a 3D engineer/driver sitting on a swivel stool.
+ * - Stage 2 (Image 3): Direct First-Person Zoom into the engineering desk with top angled monitor,
+ *   bottom CRT monitor showing 3D diorama and interactive links, left tool rack, desk props, and framed wall portraits.
  */
 export class PaddockRoom {
-  constructor(scene, onReturnToCockpit) {
+  constructor(scene, cameraController, onExitPaddock) {
     this.scene = scene;
-    this.onReturnToCockpit = onReturnToCockpit;
+    this.cameraController = cameraController;
+    this.onExitPaddock = onExitPaddock;
+
     this.group = new THREE.Group();
-    this.group.position.set(0, 100, 0); // Positioned in dedicated studio coordinate space
+    this.group.position.set(0, 100, 0); // Isolated studio coordinate space
     this.scene.add(this.group);
 
-    // Interactive raycast targets
+    this.stage = 'overview'; // 'overview' (Image 2) or 'desk' (Image 3)
     this.interactiveObjects = [];
 
     // Projects list
@@ -71,203 +73,432 @@ export class PaddockRoom {
     this.crtCtx = null;
     this.crtTexture = null;
 
-    this.buildRoom();
+    this.engineerMesh = null;
+    this.engineerGroup = null;
+
+    this.buildTruckEnvironment();
+    this.buildInterior();
+    this.buildEngineerCharacter();
+    this.buildTopMonitor();
+    this.buildBottomCRT();
     this.buildLighting();
   }
 
-  buildRoom() {
-    // Exact color palette matching Miguel Iranzo's Paddock
-    const wallBackMat = new THREE.MeshStandardMaterial({ color: 0x24584C, roughness: 0.5, metalness: 0.05 });
-    const wallLeftMat = new THREE.MeshStandardMaterial({ color: 0x1E4A40, roughness: 0.5 });
-    const wallRightMat = new THREE.MeshStandardMaterial({ color: 0x225247, roughness: 0.5 });
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x173B33, roughness: 0.6 });
-    const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x1A4239, roughness: 0.6 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0x327566, roughness: 0.4 });
-    const deskMat = new THREE.MeshStandardMaterial({ color: 0x265C50, roughness: 0.4 });
-    const whitePropMat = new THREE.MeshStandardMaterial({ color: 0xEDF6F2, roughness: 0.3 });
-    const darkFrameMat = new THREE.MeshStandardMaterial({ color: 0x0E211D, roughness: 0.4 });
+  buildTruckEnvironment() {
+    // Red F1 Transporter Truck Materials
+    const truckRedMat = new THREE.MeshStandardMaterial({ color: 0xD32F2F, roughness: 0.35, metalness: 0.15 });
+    const truckDarkRedMat = new THREE.MeshStandardMaterial({ color: 0x991B1B, roughness: 0.4 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xDDDDDD, metalness: 0.85, roughness: 0.2 });
+    const tireBlackMat = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.7 });
 
-    // 1. WALLS & CEILING
-    // Back Wall
-    const backWallGeo = new THREE.PlaneGeometry(12, 8);
-    const backWall = new THREE.Mesh(backWallGeo, wallBackMat);
-    backWall.position.set(0, 4, -4);
+    // 1. HOSPITALITY TRAILER OUTER SHELL (Red frame with cutaway opening)
+    // Floor
+    const trailerFloorGeo = new THREE.BoxGeometry(10.5, 0.4, 6.0);
+    const trailerFloor = new THREE.Mesh(trailerFloorGeo, truckDarkRedMat);
+    trailerFloor.position.set(0, 0.2, -1.5);
+    trailerFloor.receiveShadow = true;
+    this.group.add(trailerFloor);
+
+    // Roof Frame
+    const trailerRoofGeo = new THREE.BoxGeometry(10.5, 0.4, 6.0);
+    const trailerRoof = new THREE.Mesh(trailerRoofGeo, truckRedMat);
+    trailerRoof.position.set(0, 7.8, -1.5);
+    this.group.add(trailerRoof);
+
+    // Left outer trailer wall
+    const trailerLeftGeo = new THREE.BoxGeometry(0.4, 7.6, 6.0);
+    const trailerLeft = new THREE.Mesh(trailerLeftGeo, truckRedMat);
+    trailerLeft.position.set(-5.15, 4.0, -1.5);
+    this.group.add(trailerLeft);
+
+    // Right outer trailer wall
+    const trailerRightGeo = new THREE.BoxGeometry(0.4, 7.6, 6.0);
+    const trailerRight = new THREE.Mesh(trailerRightGeo, truckRedMat);
+    trailerRight.position.set(5.15, 4.0, -1.5);
+    this.group.add(trailerRight);
+
+    // 2. TOP ROOF SIGNAGE BANNER ("aramco" / "FERRARI" header matching Image 2)
+    const bannerW = 9.8;
+    const bannerH = 1.1;
+    const bannerGeo = new THREE.BoxGeometry(bannerW, bannerH, 0.15);
+    const bannerMat = new THREE.MeshBasicMaterial({ map: this.createTopBannerTexture() });
+    const bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
+    bannerMesh.position.set(0, 7.25, 1.45);
+    this.group.add(bannerMesh);
+
+    // 3. FLOATING 3D '@' / WEB ICON ON TOP RIGHT (Matching Image 2)
+    const atGroup = new THREE.Group();
+    atGroup.position.set(4.6, 7.1, 1.6);
+
+    const torusGeo = new THREE.TorusGeometry(0.55, 0.12, 16, 32);
+    const atMat = new THREE.MeshStandardMaterial({
+      color: 0x00A8E8,
+      roughness: 0.2,
+      metalness: 0.6,
+      emissive: 0x005588,
+      emissiveIntensity: 0.6
+    });
+    const atMesh = new THREE.Mesh(torusGeo, atMat);
+    atGroup.add(atMesh);
+
+    // Inner stem of @
+    const atStemGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16);
+    const atStem = new THREE.Mesh(atStemGeo, atMat);
+    atStem.position.set(0.18, -0.1, 0);
+    atGroup.add(atStem);
+
+    this.group.add(atGroup);
+    this.floatingAtGroup = atGroup;
+
+    // 4. FRONT TRUCK CAB (Visible on left side of Image 2)
+    const cabGroup = new THREE.Group();
+    cabGroup.position.set(-6.6, 2.5, 0.2);
+
+    const cabGeo = new THREE.BoxGeometry(2.4, 4.5, 4.0);
+    const cabMesh = new THREE.Mesh(cabGeo, truckRedMat);
+    cabGroup.add(cabMesh);
+
+    // Cab windscreen
+    const windowGeo = new THREE.BoxGeometry(0.1, 1.6, 3.2);
+    const windowMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.1, metalness: 0.9 });
+    const windowMesh = new THREE.Mesh(windowGeo, windowMat);
+    windowMesh.position.set(-1.21, 0.6, 0);
+    cabGroup.add(windowMesh);
+
+    // Truck Wheel underneath
+    const wheelGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.6, 24);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMesh = new THREE.Mesh(wheelGeo, tireBlackMat);
+    wheelMesh.position.set(0, -2.1, 0);
+
+    const hubGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.65, 16);
+    hubGeo.rotateZ(Math.PI / 2);
+    const hubMesh = new THREE.Mesh(hubGeo, chromeMat);
+    hubMesh.position.set(0, -2.1, 0);
+
+    cabGroup.add(wheelMesh);
+    cabGroup.add(hubMesh);
+    this.group.add(cabGroup);
+  }
+
+  createTopBannerTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Left Pirelli/Ille Red Bar
+    ctx.fillStyle = '#D62828';
+    ctx.fillRect(0, 0, 260, 128);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 64px "Orbitron", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ILLE', 130, 64);
+
+    // Center Aramco Blue/Cyan Panel
+    const grad = ctx.createLinearGradient(260, 0, 800, 128);
+    grad.addColorStop(0, '#00A8E8');
+    grad.addColorStop(0.5, '#70D6FF');
+    grad.addColorStop(1, '#A0E426');
+    ctx.fillStyle = grad;
+    ctx.fillRect(260, 0, 560, 128);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 72px "Titillium Web", sans-serif';
+    ctx.fillText('aramco', 540, 64);
+
+    // Right Dark Accent
+    ctx.fillStyle = '#222222';
+    ctx.fillRect(820, 0, 204, 128);
+    ctx.fillStyle = '#FFD166';
+    ctx.font = 'bold 50px "Orbitron", sans-serif';
+    ctx.fillText('▲ F1', 920, 64);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  buildInterior() {
+    const wallBackMat = new THREE.MeshStandardMaterial({ color: 0x275D51, roughness: 0.45 });
+    const wallLeftMat = new THREE.MeshStandardMaterial({ color: 0x204C42, roughness: 0.5 });
+    const wallRightMat = new THREE.MeshStandardMaterial({ color: 0x235247, roughness: 0.5 });
+    const deskMat = new THREE.MeshStandardMaterial({ color: 0x2E695D, roughness: 0.4 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xF0F7F4, roughness: 0.3 });
+    const redCabinetMat = new THREE.MeshStandardMaterial({ color: 0xD32F2F, roughness: 0.35 });
+    const darkHandleMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+    const darkFrameMat = new THREE.MeshStandardMaterial({ color: 0x0E211D, roughness: 0.4 });
+    const tireBlackMat = new THREE.MeshStandardMaterial({ color: 0x1D2220, roughness: 0.8 });
+
+    // 1. BACK WALL & PERSPECTIVE WALLS
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(10.2, 7.4), wallBackMat);
+    backWall.position.set(0, 4.0, -3.9);
     backWall.receiveShadow = true;
     this.group.add(backWall);
 
-    // Left Wall
-    const leftWallGeo = new THREE.PlaneGeometry(10, 8);
-    const leftWall = new THREE.Mesh(leftWallGeo, wallLeftMat);
-    leftWall.position.set(-5, 4, 0);
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 7.4), wallLeftMat);
+    leftWall.position.set(-4.95, 4.0, 0);
     leftWall.rotation.y = Math.PI / 2;
-    leftWall.receiveShadow = true;
     this.group.add(leftWall);
 
-    // Right Wall (Angled in perspective)
-    const rightWallGeo = new THREE.PlaneGeometry(10, 8);
-    const rightWall = new THREE.Mesh(rightWallGeo, wallRightMat);
-    rightWall.position.set(4.8, 4, 0);
+    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 7.4), wallRightMat);
+    rightWall.position.set(4.75, 4.0, 0);
     rightWall.rotation.y = -Math.PI / 2 + 0.12;
-    rightWall.receiveShadow = true;
     this.group.add(rightWall);
 
-    // Ceiling
-    const ceilingGeo = new THREE.PlaneGeometry(12, 10);
-    const ceiling = new THREE.Mesh(ceilingGeo, ceilingMat);
-    ceiling.position.set(0, 7.5, 0);
-    ceiling.rotation.x = Math.PI / 2;
-    this.group.add(ceiling);
+    // 2. WHITE 3-TIER TIRE RACK ON LEFT (Holding 5 F1 tires matching Image 2)
+    const rackGroup = new THREE.Group();
+    rackGroup.position.set(-3.7, 1.8, -2.4);
 
-    // Ceiling Beam across top
-    const beamGeo = new THREE.BoxGeometry(12, 0.4, 0.6);
-    const beam = new THREE.Mesh(beamGeo, trimMat);
-    beam.position.set(0, 7.3, -3.7);
-    this.group.add(beam);
+    // Vertical Frame Posts (4 posts)
+    for (let x of [-0.6, 0.6]) {
+      for (let z of [-0.45, 0.45]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.2, 0.1), whiteMat);
+        post.position.set(x, 1.9, z);
+        post.castShadow = true;
+        rackGroup.add(post);
+      }
+    }
 
-    // Right corner support pillar
-    const pillarGeo = new THREE.BoxGeometry(0.5, 8, 0.6);
-    const pillar = new THREE.Mesh(pillarGeo, trimMat);
-    pillar.position.set(3.4, 4, -3.7);
-    this.group.add(pillar);
+    // 3 Shelves
+    for (let y of [0.0, 1.4, 2.8]) {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 1.0), whiteMat);
+      shelf.position.set(0, y, 0);
+      rackGroup.add(shelf);
+    }
 
-    // 2. LEFT SHELVING & 3D TOOLBOARD
-    // Left white shelf unit
-    const shelfGeo = new THREE.BoxGeometry(0.5, 7, 2.2);
-    const shelf = new THREE.Mesh(shelfGeo, whitePropMat);
-    shelf.position.set(-4.7, 3.5, -2.5);
-    shelf.castShadow = true;
-    this.group.add(shelf);
+    // 5 F1 Slick Tires in the Rack
+    const addTire = (x, y, z) => {
+      const tireGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.38, 20);
+      tireGeo.rotateX(Math.PI / 2);
+      const tire = new THREE.Mesh(tireGeo, tireBlackMat);
+      tire.position.set(x, y, z);
+      tire.castShadow = true;
+      rackGroup.add(tire);
+    };
 
-    // Toolboard Backing
-    const toolboardGeo = new THREE.BoxGeometry(0.12, 4.0, 2.1);
-    const toolboardMat = new THREE.MeshStandardMaterial({ color: 0x2E6E60, roughness: 0.4 });
-    const toolboard = new THREE.Mesh(toolboardGeo, toolboardMat);
-    toolboard.position.set(-4.9, 4.0, -0.6);
-    this.group.add(toolboard);
+    addTire(-0.25, 0.6, 0); // Bottom tier tire 1
+    addTire(0.25, 0.6, 0);  // Bottom tier tire 2
+    addTire(-0.25, 2.0, 0); // Middle tier tire 1
+    addTire(0.25, 2.0, 0);  // Middle tier tire 2
+    addTire(0.0, 3.4, 0);   // Top tier tire 1
 
-    // Toolboard Outer Border Bevel
-    const tbBorderGeo = new THREE.BoxGeometry(0.16, 4.2, 2.3);
-    const tbBorder = new THREE.Mesh(tbBorderGeo, trimMat);
-    tbBorder.position.set(-4.93, 4.0, -0.6);
-    this.group.add(tbBorder);
+    this.group.add(rackGroup);
 
-    // 4 Screwdrivers mounted vertically on top of toolboard
+    // 3. GREEN TOOLBOARD (Mounted on Back Wall matching Image 2)
+    const toolboardGroup = new THREE.Group();
+    toolboardGroup.position.set(-2.0, 4.4, -3.75);
+
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0x337A6C, roughness: 0.4 });
+    const board = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.2, 0.12), boardMat);
+    toolboardGroup.add(board);
+
+    // 4 White Screwdrivers on Top of Toolboard
     for (let i = 0; i < 4; i++) {
-      const handleGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
-      const handle = new THREE.Mesh(handleGeo, whitePropMat);
-      handle.position.set(-4.8, 4.9, -1.2 + i * 0.4);
-
-      const shaftGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.9, 6);
-      const shaft = new THREE.Mesh(shaftGeo, whitePropMat);
-      shaft.position.set(-4.8, 4.2, -1.2 + i * 0.4);
-
-      this.group.add(handle);
-      this.group.add(shaft);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), whiteMat);
+      handle.position.set(-0.55 + i * 0.36, 0.9, 0.1);
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.7, 8), whiteMat);
+      shaft.position.set(-0.55 + i * 0.36, 0.35, 0.1);
+      toolboardGroup.add(handle);
+      toolboardGroup.add(shaft);
     }
 
-    // 3 Double-ended wrenches / spanners mounted horizontally
+    // 3 White Wrenches / Spanners on Bottom of Toolboard
     for (let j = 0; j < 3; j++) {
-      const wrenchBodyGeo = new THREE.BoxGeometry(0.06, 0.12, 1.4);
-      const wrenchBody = new THREE.Mesh(wrenchBodyGeo, whitePropMat);
-      wrenchBody.position.set(-4.8, 3.3 - j * 0.38, -0.6);
+      const wrenchBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.06), whiteMat);
+      wrenchBody.position.set(0, -0.4 - j * 0.34, 0.1);
+      const headL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.07), whiteMat);
+      headL.position.set(-0.6, -0.4 - j * 0.34, 0.1);
+      const headR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.07), whiteMat);
+      headR.position.set(0.6, -0.4 - j * 0.34, 0.1);
+      toolboardGroup.add(wrenchBody);
+      toolboardGroup.add(headL);
+      toolboardGroup.add(headR);
+    }
+    this.group.add(toolboardGroup);
 
-      const wrenchHeadGeo = new THREE.BoxGeometry(0.07, 0.22, 0.18);
-      const headL = new THREE.Mesh(wrenchHeadGeo, whitePropMat);
-      headL.position.set(-4.8, 3.3 - j * 0.38, -1.3);
+    // 4. RED TOOL CABINET & DRAWERS UNDER DESK (Matching Image 2)
+    const cabinetGroup = new THREE.Group();
+    cabinetGroup.position.set(0.7, 1.0, -2.6);
 
-      const headR = new THREE.Mesh(wrenchHeadGeo, whitePropMat);
-      headR.position.set(-4.8, 3.3 - j * 0.38, 0.1);
+    const cabinetBody = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.8, 2.0), redCabinetMat);
+    cabinetBody.receiveShadow = true;
+    cabinetGroup.add(cabinetBody);
 
-      this.group.add(wrenchBody);
-      this.group.add(headL);
-      this.group.add(headR);
+    // 6 Red Drawers with Black Horizontal Handles
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 2; col++) {
+        const drawerX = -1.25 + col * 2.5;
+        const drawerY = 0.55 - row * 0.55;
+
+        const drawerFront = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.45, 0.05), redCabinetMat);
+        drawerFront.position.set(drawerX, drawerY, 1.03);
+        cabinetGroup.add(drawerFront);
+
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.06, 0.08), darkHandleMat);
+        handle.position.set(drawerX, drawerY, 1.08);
+        cabinetGroup.add(handle);
+      }
     }
 
-    // 3. FOREGROUND WORKBENCH DESK
-    const deskGeo = new THREE.BoxGeometry(10, 0.4, 3.5);
-    const desk = new THREE.Mesh(deskGeo, deskMat);
-    desk.position.set(0, 1.8, -2.2);
-    desk.receiveShadow = true;
-    this.group.add(desk);
+    // Open pulled-out drawer with tools on left side (Matching Image 2)
+    const openDrawer = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.38, 1.2), redCabinetMat);
+    openDrawer.position.set(-1.25, 0.55, 1.5);
+    cabinetGroup.add(openDrawer);
 
-    // 3D Minimalist White Keyboard in center of desk
-    const kbGeo = new THREE.BoxGeometry(2.4, 0.12, 0.9);
-    const kb = new THREE.Mesh(kbGeo, whitePropMat);
-    kb.position.set(-0.3, 2.06, -1.8);
+    this.group.add(cabinetGroup);
+
+    // 5. WORKBENCH DESKTOP
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.25, 2.8), deskMat);
+    deskTop.position.set(0.2, 1.95, -2.4);
+    deskTop.receiveShadow = true;
+    this.group.add(deskTop);
+
+    // Keyboard & Mouse in center of desk
+    const kb = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.85), whiteMat);
+    kb.position.set(-0.05, 2.12, -1.9);
     kb.castShadow = true;
     this.group.add(kb);
 
-    // 3D White Trackpad / Mouse to the right of keyboard
-    const mouseGeo = new THREE.BoxGeometry(0.3, 0.08, 0.5);
-    const mouse = new THREE.Mesh(mouseGeo, whitePropMat);
-    mouse.position.set(1.3, 2.04, -1.8);
+    const mouse = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.45), whiteMat);
+    mouse.position.set(1.4, 2.1, -1.9);
     this.group.add(mouse);
 
-    // 3D Stack of pastel cyan & mint technical papers
+    // Stacked Technical Note Papers on right of desk
     const paperMat1 = new THREE.MeshStandardMaterial({ color: 0x88BCB2, roughness: 0.6 });
     const paperMat2 = new THREE.MeshStandardMaterial({ color: 0xB6DDD5, roughness: 0.6 });
     const paperMat3 = new THREE.MeshStandardMaterial({ color: 0xEDF6F2, roughness: 0.6 });
 
     const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.02, 1.05), paperMat1);
-    p1.position.set(2.1, 2.01, -1.7);
+    p1.position.set(2.2, 2.08, -1.8);
     p1.rotation.y = 0.15;
     this.group.add(p1);
 
     const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.02, 0.95), paperMat2);
-    p2.position.set(2.2, 2.03, -1.8);
+    p2.position.set(2.3, 2.1, -1.9);
     p2.rotation.y = -0.1;
     this.group.add(p2);
 
     const p3 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.02, 0.85), paperMat3);
-    p3.position.set(2.3, 2.05, -1.75);
+    p3.position.set(2.4, 2.12, -1.85);
     p3.rotation.y = 0.05;
     this.group.add(p3);
 
-    // 3D Garage Canisters on the left of desk
-    const canGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.45, 12);
+    // Angled Wrench lying flat on left side of desk
+    const deskWrench = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.12), whiteMat);
+    deskWrench.position.set(-1.8, 2.09, -1.6);
+    deskWrench.rotation.y = -0.3;
+    this.group.add(deskWrench);
+
+    // 2 Metal Garage Cans / Flasks on left
+    const canGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.45, 12);
     const canMat = new THREE.MeshStandardMaterial({ color: 0x1E463D, roughness: 0.4 });
     const can1 = new THREE.Mesh(canGeo, canMat);
-    can1.position.set(-2.4, 2.22, -1.8);
+    can1.position.set(-1.6, 2.3, -2.2);
     this.group.add(can1);
 
     const can2 = new THREE.Mesh(canGeo, canMat);
-    can2.position.set(-2.0, 2.22, -1.6);
+    can2.position.set(-1.25, 2.3, -2.4);
     this.group.add(can2);
 
-    // 4. RIGHT WALL 3D FRAMED PORTRAITS
-    // Top Wide Picture Frame (Podium Champion celebration)
-    const topFrameGeo = new THREE.BoxGeometry(0.12, 1.8, 3.4);
-    const topFrame = new THREE.Mesh(topFrameGeo, darkFrameMat);
+    // 6. RIGHT WALL FRAMED PORTRAITS (Matching Images 2 & 3)
+    // Top Wide Picture Frame (Podium photo)
+    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.8, 3.4), darkFrameMat);
     topFrame.position.set(4.3, 5.4, -1.6);
     topFrame.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(topFrame);
 
     const topPicMat = new THREE.MeshBasicMaterial({ map: this.createPodiumTexture() });
-    const topPicGeo = new THREE.PlaneGeometry(3.2, 1.6);
-    const topPic = new THREE.Mesh(topPicGeo, topPicMat);
+    const topPic = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), topPicMat);
     topPic.position.set(4.23, 5.4, -1.6);
     topPic.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(topPic);
 
-    // Bottom Portrait Frame (Driver with GOAT silhouette)
-    const btmFrameGeo = new THREE.BoxGeometry(0.12, 2.2, 1.8);
-    const btmFrame = new THREE.Mesh(btmFrameGeo, darkFrameMat);
+    // Bottom Portrait Picture Frame (Driver with GOAT silhouette)
+    const btmFrame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.2, 1.8), darkFrameMat);
     btmFrame.position.set(4.3, 3.2, -1.6);
     btmFrame.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(btmFrame);
 
     const btmPicMat = new THREE.MeshBasicMaterial({ map: this.createDriverPortraitTexture() });
-    const btmPicGeo = new THREE.PlaneGeometry(1.6, 2.0);
-    const btmPic = new THREE.Mesh(btmPicGeo, btmPicMat);
+    const btmPic = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), btmPicMat);
     btmPic.position.set(4.23, 3.2, -1.6);
     btmPic.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(btmPic);
+  }
 
-    // 5. TOP ANGLED 3D MONITOR
-    this.buildTopMonitor();
+  buildEngineerCharacter() {
+    // 3D Guy Sitting in the Paddock (Red suit + Red Helmet on Swivel Stool matching Image 2)
+    this.engineerGroup = new THREE.Group();
+    this.engineerGroup.position.set(0.6, 0.4, -1.4);
 
-    // 6. BOTTOM 3D CRT TELEVISION
-    this.buildBottomCRT();
+    const redSuitMat = new THREE.MeshStandardMaterial({ color: 0xD32F2F, roughness: 0.4 });
+    const helmetMat = new THREE.MeshStandardMaterial({ color: 0xC62828, roughness: 0.3 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.9, roughness: 0.2 });
+    const seatMat = new THREE.MeshStandardMaterial({ color: 0x7E9E97, roughness: 0.5 });
+
+    // 1. Swivel Stool (Round seat + chrome stem + base)
+    const stoolSeatGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.14, 16);
+    const stoolSeat = new THREE.Mesh(stoolSeatGeo, seatMat);
+    stoolSeat.position.set(0, 1.3, 0);
+    this.engineerGroup.add(stoolSeat);
+
+    const stoolStemGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.3, 12);
+    const stoolStem = new THREE.Mesh(stoolStemGeo, chromeMat);
+    stoolStem.position.set(0, 0.65, 0);
+    this.engineerGroup.add(stoolStem);
+
+    const stoolFootRingGeo = new THREE.TorusGeometry(0.28, 0.03, 12, 24);
+    stoolFootRingGeo.rotateX(Math.PI / 2);
+    const stoolFootRing = new THREE.Mesh(stoolFootRingGeo, chromeMat);
+    stoolFootRing.position.set(0, 0.4, 0);
+    this.engineerGroup.add(stoolFootRing);
+
+    // 2. Character Torso (Leaning slightly forward towards keyboard)
+    const torsoGeo = new THREE.BoxGeometry(0.7, 0.85, 0.45);
+    const torso = new THREE.Mesh(torsoGeo, redSuitMat);
+    torso.position.set(0, 2.0, 0);
+    torso.rotation.x = 0.15; // Leaning into desk
+    torso.castShadow = true;
+    this.engineerGroup.add(torso);
+
+    // 3. Faceted Red Racing Helmet (Matching exact low-poly shape of Image 2)
+    const helmetGeo = new THREE.DodecahedronGeometry(0.38, 1);
+    const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+    helmet.position.set(0, 2.7, -0.05);
+    helmet.castShadow = true;
+    this.engineerGroup.add(helmet);
+
+    // Visor
+    const visorGeo = new THREE.BoxGeometry(0.34, 0.12, 0.2);
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 });
+    const visor = new THREE.Mesh(visorGeo, visorMat);
+    visor.position.set(0, 2.7, -0.32);
+    this.engineerGroup.add(visor);
+
+    // 4. Arms Posed Typing on Keyboard
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), redSuitMat);
+    armL.position.set(-0.45, 1.9, -0.25);
+    armL.rotation.x = -Math.PI / 4;
+    armL.rotation.z = -0.15;
+    this.engineerGroup.add(armL);
+
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), redSuitMat);
+    armR.position.set(0.45, 1.9, -0.25);
+    armR.rotation.x = -Math.PI / 4;
+    armR.rotation.z = 0.15;
+    this.engineerGroup.add(armR);
+
+    this.group.add(this.engineerGroup);
+
+    // Interactive Raycast Click Target for Character / Workstation
+    const hitBoxGeo = new THREE.BoxGeometry(1.6, 2.8, 1.6);
+    const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
+    this.engineerMesh = new THREE.Mesh(hitBoxGeo, hitBoxMat);
+    this.engineerMesh.position.set(0, 1.8, 0);
+    this.engineerMesh.name = 'PADDOCK_ENGINEER_CLICK';
+    this.engineerGroup.add(this.engineerMesh);
+
+    this.interactiveObjects.push(this.engineerMesh);
   }
 
   buildTopMonitor() {
@@ -276,16 +507,15 @@ export class PaddockRoom {
     const monDepth = 0.25;
 
     const topMonGroup = new THREE.Group();
-    topMonGroup.position.set(-0.2, 5.7, -3.6);
+    topMonGroup.position.set(-0.05, 5.7, -3.6);
     topMonGroup.rotation.x = 0.16; // Angled down towards driver camera
 
-    const monFrameGeo = new THREE.BoxGeometry(monW, monH, monDepth);
     const monFrameMat = new THREE.MeshStandardMaterial({
       color: 0x1B443B,
       roughness: 0.3,
       metalness: 0.2
     });
-    const monFrame = new THREE.Mesh(monFrameGeo, monFrameMat);
+    const monFrame = new THREE.Mesh(new THREE.BoxGeometry(monW, monH, monDepth), monFrameMat);
     topMonGroup.add(monFrame);
 
     // Monitor Canvas
@@ -316,7 +546,7 @@ export class PaddockRoom {
     const w = this.topMonitorCanvas.width;
     const h = this.topMonitorCanvas.height;
 
-    // Dark charcoal screen background matching Image 2
+    // Dark charcoal screen background matching Image 3
     ctx.fillStyle = '#1B2428';
     ctx.fillRect(0, 0, w, h);
 
@@ -337,7 +567,7 @@ export class PaddockRoom {
     ctx.textAlign = 'center';
     ctx.fillText('PREVIOUS', 121, 60);
 
-    // Center Title: Aryan's paddock (matching Mike's paddock in Image 2)
+    // Center Title: Aryan's paddock (matching Mike's paddock in Image 3)
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 36px "Titillium Web", sans-serif';
     ctx.fillText("Aryan's paddock", w / 2, 62);
@@ -353,7 +583,7 @@ export class PaddockRoom {
     ctx.font = 'bold 22px "Titillium Web", sans-serif';
     ctx.fillText('NEXT', w - 121, 60);
 
-    // Body Text (Exact copy from Miguel Iranzo portfolio Image 2)
+    // Body Text (Exact copy from reference Image 3)
     ctx.textAlign = 'left';
     ctx.fillStyle = '#EFF5F4';
     ctx.font = '22px "Titillium Web", sans-serif';
@@ -367,7 +597,7 @@ export class PaddockRoom {
     ctx.fillText('I am glad I finally came around to do it and hope you enjoy the', 40, 310);
     ctx.fillText('result as much as I did creating it!', 40, 342);
 
-    // [ GO BACK ] Bright Red Pill Button (Bottom Right)
+    // [ GO BACK ] Bright Red Button (Bottom Right)
     ctx.fillStyle = '#E61E1A';
     ctx.fillRect(w - 230, h - 72, 190, 48);
     ctx.strokeStyle = '#FF4D4A';
@@ -388,16 +618,14 @@ export class PaddockRoom {
     const crtDepth = 0.35;
 
     const crtGroup = new THREE.Group();
-    crtGroup.position.set(-0.2, 3.4, -3.7);
+    crtGroup.position.set(-0.05, 3.4, -3.7);
 
-    // CRT Outer Frame (Teal green bevel)
-    const crtFrameGeo = new THREE.BoxGeometry(crtW, crtH, crtDepth);
     const crtFrameMat = new THREE.MeshStandardMaterial({
       color: 0x1B443B,
       roughness: 0.3,
       metalness: 0.2
     });
-    const crtFrame = new THREE.Mesh(crtFrameGeo, crtFrameMat);
+    const crtFrame = new THREE.Mesh(new THREE.BoxGeometry(crtW, crtH, crtDepth), crtFrameMat);
     crtGroup.add(crtFrame);
 
     // CRT Canvas Texture
@@ -465,7 +693,7 @@ export class PaddockRoom {
 
     ctx.fillText('🐙', 60, 230);
 
-    // 3. Central CRT Phosphor Screen (Pale Pistachio Yellow-Green from Image 2)
+    // 3. Central CRT Phosphor Screen (Pale Pistachio Yellow-Green from Image 3)
     const crtX = 140;
     const crtY = 24;
     const crtW = w - crtX - 24;
@@ -477,19 +705,19 @@ export class PaddockRoom {
     ctx.lineWidth = 4;
     ctx.strokeRect(crtX, crtY, crtW, crtH);
 
-    // CRT Horizontal Scanlines
+    // Horizontal Scanlines
     ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     for (let y = crtY; y < crtY + crtH; y += 4) {
       ctx.fillRect(crtX, y, crtW, 2);
     }
 
-    // 4. Draw 3D Isometric F1 Transporter Diorama Graphic (Matching Image 2 Screen Art)
+    // 4. Draw 3D Isometric F1 Transporter Diorama Graphic (Matching Image 3 Screen Art)
     const proj = this.projects[this.currentProjectIndex];
 
-    // Circular Isometric Podium Base
     const dioramaCenterX = crtX + 180;
     const dioramaCenterY = crtY + 280;
 
+    // Isometric Green Base
     ctx.fillStyle = '#8AB89A';
     ctx.beginPath();
     ctx.ellipse(dioramaCenterX, dioramaCenterY, 150, 65, 0, 0, Math.PI * 2);
@@ -498,9 +726,9 @@ export class PaddockRoom {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Red F1 Transporter Truck Cab & Hospitality Unit (Matching Image 2)
+    // Red F1 Transporter Truck & Structure
     ctx.fillStyle = '#D62828';
-    ctx.fillRect(dioramaCenterX - 80, dioramaCenterY - 160, 110, 140); // Hospitality structure
+    ctx.fillRect(dioramaCenterX - 80, dioramaCenterY - 160, 110, 140);
     ctx.strokeStyle = '#991B1B';
     ctx.lineWidth = 2;
     ctx.strokeRect(dioramaCenterX - 80, dioramaCenterY - 160, 110, 140);
@@ -509,17 +737,17 @@ export class PaddockRoom {
     ctx.fillStyle = '#E63946';
     ctx.fillRect(dioramaCenterX - 140, dioramaCenterY - 70, 70, 70);
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(dioramaCenterX - 135, dioramaCenterY - 60, 30, 25); // Cab window
+    ctx.fillRect(dioramaCenterX - 135, dioramaCenterY - 60, 30, 25);
 
     // Miniature F1 Race Car in front of Truck
     ctx.fillStyle = '#E63946';
     ctx.fillRect(dioramaCenterX + 10, dioramaCenterY - 20, 85, 22);
     ctx.fillStyle = '#111111';
-    ctx.fillRect(dioramaCenterX + 5, dioramaCenterY - 10, 20, 12); // Front tire
-    ctx.fillRect(dioramaCenterX + 70, dioramaCenterY - 10, 20, 12); // Rear tire
-    ctx.fillRect(dioramaCenterX + 85, dioramaCenterY - 32, 8, 22); // Rear wing
+    ctx.fillRect(dioramaCenterX + 5, dioramaCenterY - 10, 20, 12);
+    ctx.fillRect(dioramaCenterX + 70, dioramaCenterY - 10, 20, 12);
+    ctx.fillRect(dioramaCenterX + 85, dioramaCenterY - 32, 8, 22);
 
-    // Interactive Project Telemetry & Spec Details (Right side of CRT screen)
+    // Interactive Project Telemetry & Spec Details
     const infoX = crtX + 380;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
@@ -541,7 +769,7 @@ export class PaddockRoom {
     ctx.font = 'bold 18px "Titillium Web", sans-serif';
     ctx.fillText(proj.subtitle, infoX, crtY + 128);
 
-    // Description text
+    // Description
     ctx.fillStyle = '#1E3E34';
     ctx.font = '17px "Titillium Web", sans-serif';
     ctx.fillText(proj.desc.slice(0, 48), infoX, crtY + 175);
@@ -557,7 +785,7 @@ export class PaddockRoom {
     ctx.font = 'bold 16px "JetBrains Mono", monospace';
     ctx.fillText(`TECH: ${proj.techs}`, infoX, crtY + 285);
 
-    // Action CTA
+    // CTA
     ctx.fillStyle = '#0A211B';
     ctx.font = 'bold 16px "Orbitron", sans-serif';
     ctx.fillText('➔ CLICK ICONS ON LEFT (🌐 / 🐙) TO LAUNCH', infoX, crtY + 380);
@@ -577,7 +805,6 @@ export class PaddockRoom {
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    // Muted teal/cyan gradient with winner celebration
     const grad = ctx.createLinearGradient(0, 0, 512, 256);
     grad.addColorStop(0, '#1E584D');
     grad.addColorStop(0.5, '#358A7A');
@@ -606,7 +833,7 @@ export class PaddockRoom {
     ctx.fillStyle = '#1D453D';
     ctx.fillRect(0, 0, 256, 320);
 
-    // GOAT Horns / Animal silhouette backdrop matching Image 2
+    // GOAT Horns / Silhouette backdrop
     ctx.fillStyle = '#102B25';
     ctx.beginPath();
     ctx.moveTo(70, 180);
@@ -640,67 +867,99 @@ export class PaddockRoom {
   }
 
   buildLighting() {
-    // Dedicated Room Ambient Light (Guarantees bright vibrant visibility)
-    const roomAmbient = new THREE.AmbientLight(0xEFFDF8, 2.0);
+    // Room Ambient Light
+    const roomAmbient = new THREE.AmbientLight(0xEFFDF8, 2.2);
     this.group.add(roomAmbient);
 
-    // Primary workshop ceiling light
-    const workPoint = new THREE.PointLight(0xFFFFFF, 3.2, 25);
-    workPoint.position.set(0, 6.2, -1.8);
+    // Main workshop ceiling light
+    const workPoint = new THREE.PointLight(0xFFFFFF, 3.5, 30);
+    workPoint.position.set(0, 6.2, -1.5);
     this.group.add(workPoint);
 
     // Desk spotlight
-    const deskSpot = new THREE.SpotLight(0xE0FFF4, 4.0, 15, Math.PI / 3, 0.3);
+    const deskSpot = new THREE.SpotLight(0xE0FFF4, 4.2, 18, Math.PI / 3, 0.3);
     deskSpot.position.set(0, 6.5, -2.0);
     deskSpot.target.position.set(0, 2.0, -2.0);
     this.group.add(deskSpot);
     this.group.add(deskSpot.target);
+
+    // Truck exterior fill light
+    const truckFill = new THREE.DirectionalLight(0xE5F5FF, 1.8);
+    truckFill.position.set(3, 108, 6);
+    this.group.add(truckFill);
+  }
+
+  enterPaddockOverview() {
+    this.stage = 'overview';
+    // Position camera for Stage 1: Truck Cutaway Overview with Guy on Stool (Image 2)
+    if (this.cameraController) {
+      this.cameraController.transitionToPaddockOverview();
+    }
+  }
+
+  zoomIntoDesk() {
+    this.stage = 'desk';
+    // Position camera for Stage 2: Direct First-Person Desk View (Image 3)
+    if (this.cameraController) {
+      this.cameraController.transitionToPaddockDesk();
+    }
   }
 
   handleScreenClick(intersect) {
     if (!intersect || !intersect.object) return;
     const objName = intersect.object.name;
     const uv = intersect.uv;
+
+    // 1. Click on Engineer / Workstation in Stage 1 -> Zooms into Desk (Image 3)
+    if (objName === 'PADDOCK_ENGINEER_CLICK' || this.stage === 'overview') {
+      this.zoomIntoDesk();
+      return;
+    }
+
     if (!uv) return;
 
+    // 2. Top Monitor Clicks (PREVIOUS, NEXT, GO BACK)
     if (objName === 'PADDOCK_TOP_SCREEN') {
       const u = uv.x;
       const v = uv.y;
 
-      // [ PREVIOUS ] (top left: u < 0.22, v > 0.80)
+      // [ PREVIOUS ]
       if (u < 0.22 && v > 0.80) {
         this.currentProjectIndex = (this.currentProjectIndex - 1 + this.projects.length) % this.projects.length;
         this.renderCRTDisplay();
         return;
       }
 
-      // [ NEXT ] (top right: u > 0.78, v > 0.80)
+      // [ NEXT ]
       if (u > 0.78 && v > 0.80) {
         this.currentProjectIndex = (this.currentProjectIndex + 1) % this.projects.length;
         this.renderCRTDisplay();
         return;
       }
 
-      // [ GO BACK ] (bottom right: u > 0.72, v < 0.28)
+      // [ GO BACK ]
       if (u > 0.72 && v < 0.28) {
-        if (this.onReturnToCockpit) this.onReturnToCockpit();
+        // Zoom back out to Stage 1 Truck Overview or exit
+        if (this.stage === 'desk') {
+          this.enterPaddockOverview();
+        } else {
+          if (this.onExitPaddock) this.onExitPaddock();
+        }
         return;
       }
     }
 
+    // 3. Bottom CRT Screen Clicks (🌐 Web & 🐙 GitHub)
     if (objName === 'PADDOCK_CRT_SCREEN') {
       const u = uv.x;
       const v = uv.y;
       const proj = this.projects[this.currentProjectIndex];
 
-      // Left sidebar (u < 0.14)
       if (u < 0.14) {
-        // Globe (v between 0.60 and 0.95)
         if (v >= 0.60 && v <= 0.95) {
           window.open(proj.web, '_blank');
           return;
         }
-        // GitHub (v between 0.30 and 0.60)
         if (v >= 0.30 && v < 0.60) {
           window.open(proj.github, '_blank');
           return;
