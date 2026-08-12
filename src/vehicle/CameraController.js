@@ -158,7 +158,7 @@ export class CameraController {
     gsap.to(this.camera.position, {
       x: 0.4,
       y: 103.8,
-      z: 4.4,
+      z: 5.0,
       duration: 0.9,
       ease: 'power3.out'
     });
@@ -191,7 +191,7 @@ export class CameraController {
     gsap.to(this.camera.position, {
       x: -0.05,
       y: 104.3,
-      z: 0.45,
+      z: 2.2,
       duration: 0.8,
       ease: 'power3.out'
     });
@@ -221,11 +221,11 @@ export class CameraController {
     gsap.killTweensOf(this.paddockTargetLookAt);
     gsap.killTweensOf(this.camera);
 
-    // Zoom directly in front of the top monitor
+    // Frame the ENTIRE top monitor with its outer bezel, buttons, and comfortable margins
     gsap.to(this.camera.position, {
       x: -0.05,
-      y: 105.9,
-      z: -1.55,
+      y: 105.75,
+      z: 0.45,
       duration: 0.75,
       ease: 'power3.out'
     });
@@ -239,7 +239,7 @@ export class CameraController {
     });
 
     gsap.to(this.camera, {
-      fov: 38,
+      fov: 48,
       duration: 0.75,
       ease: 'power3.out',
       onUpdate: () => this.camera.updateProjectionMatrix(),
@@ -255,11 +255,11 @@ export class CameraController {
     gsap.killTweensOf(this.paddockTargetLookAt);
     gsap.killTweensOf(this.camera);
 
-    // Zoom directly in front of the CRT monitor
+    // Frame the ENTIRE bottom CRT monitor with its 3 icons and outer frame
     gsap.to(this.camera.position, {
       x: -0.05,
       y: 103.4,
-      z: -1.4,
+      z: 0.45,
       duration: 0.75,
       ease: 'power3.out'
     });
@@ -273,7 +273,7 @@ export class CameraController {
     });
 
     gsap.to(this.camera, {
-      fov: 42,
+      fov: 50,
       duration: 0.75,
       ease: 'power3.out',
       onUpdate: () => this.camera.updateProjectionMatrix(),

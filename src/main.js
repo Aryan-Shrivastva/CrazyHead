@@ -493,6 +493,8 @@ class F1PortfolioApp {
 
     this.soundManager.playRadioChime();
     this.lobbyUI.hide();
+    const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
+    if (topPaddockBtn) topPaddockBtn.style.display = 'none';
 
     if (this.paddockRoom) {
       this.paddockRoom.enterPaddockOverview();
@@ -506,6 +508,8 @@ class F1PortfolioApp {
 
     this.soundManager.playRadioChime();
     this.telemetryHUD.hide();
+    const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
+    if (topPaddockBtn) topPaddockBtn.style.display = 'none';
 
     if (this.paddockRoom) {
       this.paddockRoom.enterPaddockOverview();
@@ -514,6 +518,9 @@ class F1PortfolioApp {
 
   returnToCockpit() {
     if (this.gameState !== 'paddock') return;
+
+    const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
+    if (topPaddockBtn) topPaddockBtn.style.display = '';
 
     if (this.previousPaddockState === 'lobby') {
       this.gameState = 'lobby';
