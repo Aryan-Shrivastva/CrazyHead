@@ -3,8 +3,8 @@ import { F1_TEAMS } from '../data/teams.js';
 
 /**
  * Sequential 2-Page Lobby Controller:
- * Page 1: Pure Constructor/Team Selection
- * Page 2: Driver Selection / Career Confirm Settings
+ * Page 1: Pure Constructor/Team Selection (Car preview + Perks table + Ribbon)
+ * Page 2: Driver Selection / Career Confirm Settings (3D Drivers in front of car)
  */
 export class LobbyUI {
   constructor(onStartRace, onTeamChange, onDriverChange, soundManager) {
@@ -64,9 +64,14 @@ export class LobbyUI {
         <span class="tile-team-short">${team.logoText || team.shortName}</span>
       `;
 
-      tile.addEventListener('click', () => {
+      // Handle pointer events for immediate responsiveness
+      const onSelect = (e) => {
+        if (e) e.stopPropagation();
         this.selectTeam(team);
-      });
+      };
+
+      tile.addEventListener('click', onSelect);
+      tile.addEventListener('pointerdown', onSelect);
 
       this.ribbonEl.appendChild(tile);
     });
@@ -88,7 +93,6 @@ export class LobbyUI {
     this.currentPage = pageNum;
 
     if (pageNum === 1) {
-      // Show Team Select Page
       if (this.pageTeam) {
         this.pageTeam.classList.remove('hidden');
         this.pageTeam.classList.add('active');
@@ -98,7 +102,6 @@ export class LobbyUI {
         this.pageDriver.classList.add('hidden');
       }
     } else if (pageNum === 2) {
-      // Show Driver Select Page
       if (this.pageTeam) {
         this.pageTeam.classList.remove('active');
         this.pageTeam.classList.add('hidden');
@@ -138,7 +141,8 @@ export class LobbyUI {
         <span style="color: var(--f1-yellow); font-size: 11px;">#${driver.number}</span>
       `;
 
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.selectDriver(driver);
       });
 
@@ -165,7 +169,7 @@ export class LobbyUI {
 
     // 3. Ambient Wave Color
     if (this.ambientWaves) {
-      this.ambientWaves.style.setProperty('--ambient-wave-color', `${this.selectedTeam.color}44`);
+      this.ambientWaves.style.setProperty('--ambient-wave-color', `${this.selectedTeam.color}55`);
     }
 
     // 4. Perks Table (Page 1)
@@ -184,23 +188,23 @@ export class LobbyUI {
   }
 
   setupListeners() {
-    // Page 1 -> Page 2: Select Constructor button
     if (this.confirmTeamBtn) {
-      this.confirmTeamBtn.addEventListener('click', () => {
+      this.confirmTeamBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.goToPage(2);
       });
     }
 
-    // Page 2 -> Page 1: Back to Teams button
     if (this.backToTeamBtn) {
-      this.backToTeamBtn.addEventListener('click', () => {
+      this.backToTeamBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.goToPage(1);
       });
     }
 
-    // Page 2 -> Race: Launch grid button
     if (this.startBtn) {
-      this.startBtn.addEventListener('click', () => {
+      this.startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.triggerLightsOutSequence();
       });
     }

@@ -5,13 +5,14 @@ export const F1_TEAMS = [
     shortName: 'Ferrari',
     badge: '🐎',
     logoText: 'FERRARI',
-    color: '#E80020',
-    accentColor: '#FFF200',
-    subAccent: '#002D62',
-    cockpitColor: '#C00018',
-    haloColor: '#1A1A1A',
-    gloveColor: '#FFFFFF',
-    gloveAccent: '#E80020',
+    color: '#E80020', // Rosso Corsa Red
+    accentColor: '#FFF200', // Modena Yellow
+    subAccent: '#002D62', // HP Blue
+    bodyRoughness: 0.2,
+    bodyMetalness: 0.6,
+    suitColor: '#E80020', // Ferrari Red suit
+    suitAccent: '#FFFFFF', // White stripes & HP badge
+    helmetColor: '#E80020',
     teamPrincipal: 'FRÉDÉRIC VASSEUR',
     chassis: 'SF-25',
     base: 'MARANELLO, ITALY',
@@ -27,8 +28,7 @@ export const F1_TEAMS = [
       { name: '2 Simultaneous Upgrades', val: '40%', active: true },
       { name: 'R&D Rush', val: '45%', active: true },
       { name: '2nd R&D Secret Upgrade', val: '50%', active: true },
-      { name: '3 Simultaneous Upgrades', val: '55%', active: false },
-      { name: 'Power Unit Reliability Boost', val: '65%', active: false }
+      { name: '3 Simultaneous Upgrades', val: '55%', active: false }
     ]
   },
   {
@@ -37,13 +37,14 @@ export const F1_TEAMS = [
     shortName: 'McLaren',
     badge: '🟠',
     logoText: 'MCLAREN',
-    color: '#FF8000',
-    accentColor: '#00A3E0',
-    subAccent: '#1E1E1E',
-    cockpitColor: '#FF7000',
-    haloColor: '#1A1A1A',
-    gloveColor: '#FF8000',
-    gloveAccent: '#00A3E0',
+    color: '#FF8000', // Papaya Orange
+    accentColor: '#00A3E0', // Chrome Blue
+    subAccent: '#111111', // Stealth Carbon
+    bodyRoughness: 0.25,
+    bodyMetalness: 0.5,
+    suitColor: '#FF8000', // Papaya Suit
+    suitAccent: '#111111', // Black stripes
+    helmetColor: '#00A3E0',
     teamPrincipal: 'ANDREA STELLA',
     chassis: 'MCL39',
     base: 'WOKING, UNITED KINGDOM',
@@ -68,13 +69,14 @@ export const F1_TEAMS = [
     shortName: 'Red Bull',
     badge: '🐂',
     logoText: 'RED BULL',
-    color: '#3671C6',
-    accentColor: '#FFC800',
-    subAccent: '#CC1E4A',
-    cockpitColor: '#0B162C',
-    haloColor: '#111726',
-    gloveColor: '#0B162C',
-    gloveAccent: '#FFC800',
+    color: '#162B55', // Matte Navy Blue
+    accentColor: '#FFC800', // Bull Yellow
+    subAccent: '#CC1E4A', // Bull Red
+    bodyRoughness: 0.45, // Matte Finish!
+    bodyMetalness: 0.3,
+    suitColor: '#162B55', // Navy Suit
+    suitAccent: '#FFC800', // Yellow stripes
+    helmetColor: '#162B55',
     teamPrincipal: 'CHRISTIAN HORNER',
     chassis: 'RB21',
     base: 'MILTON KEYNES, UK',
@@ -89,8 +91,7 @@ export const F1_TEAMS = [
       { name: 'High-Speed Downforce Secret', val: '35%', active: true },
       { name: 'DRS Wing Winglet Package', val: '42%', active: true },
       { name: 'Power Unit Map Precision', val: '48%', active: true },
-      { name: 'Tire Degradation Shield', val: '52%', active: true },
-      { name: 'Race Strategy Simulation AI', val: '65%', active: false }
+      { name: 'Tire Degradation Shield', val: '52%', active: true }
     ]
   },
   {
@@ -99,13 +100,14 @@ export const F1_TEAMS = [
     shortName: 'Mercedes',
     badge: '⭐',
     logoText: 'MERCEDES',
-    color: '#00D2BE',
-    accentColor: '#FFFFFF',
-    subAccent: '#1A1A1A',
-    cockpitColor: '#0D1515',
-    haloColor: '#101010',
-    gloveColor: '#FFFFFF',
-    gloveAccent: '#00D2BE',
+    color: '#1C2430', // Metallic Silver-Black
+    accentColor: '#00D2BE', // PETRONAS Emerald Teal
+    subAccent: '#E0E0E0', // Silver
+    bodyRoughness: 0.15,
+    bodyMetalness: 0.8,
+    suitColor: '#1C2430', // Black suit
+    suitAccent: '#00D2BE', // Teal stripes
+    helmetColor: '#00D2BE',
     teamPrincipal: 'TOTO WOLFF',
     chassis: 'W16',
     base: 'BRACKLEY, UNITED KINGDOM',
@@ -119,8 +121,7 @@ export const F1_TEAMS = [
     perks: [
       { name: 'Suspension Dynamic Camber', val: '35%', active: true },
       { name: 'Simultaneous Telemetry Link', val: '40%', active: true },
-      { name: 'ERS Harvesting Velocity', val: '45%', active: true },
-      { name: 'Sidepod Venturi Channel', val: '55%', active: false }
+      { name: 'ERS Harvesting Velocity', val: '45%', active: true }
     ]
   },
   {
@@ -129,13 +130,14 @@ export const F1_TEAMS = [
     shortName: 'Aston Martin',
     badge: '🦅',
     logoText: 'ARAMCO',
-    color: '#229971',
-    accentColor: '#CEDC00',
-    subAccent: '#0A1E17',
-    cockpitColor: '#00594C',
-    haloColor: '#121212',
-    gloveColor: '#00594C',
-    gloveAccent: '#CEDC00',
+    color: '#00594C', // British Racing Green
+    accentColor: '#CEDC00', // Lime Yellow
+    subAccent: '#05241D',
+    bodyRoughness: 0.2,
+    bodyMetalness: 0.7,
+    suitColor: '#00594C', // Racing Green Suit
+    suitAccent: '#CEDC00', // Lime stripes
+    helmetColor: '#00594C',
     teamPrincipal: 'MIKE KRACK',
     chassis: 'AMR25',
     base: 'SILVERSTONE, UK',
@@ -148,8 +150,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'Veteran Racecraft Telemetry', val: '38%', active: true },
-      { name: 'High-Downforce Wing Flap', val: '44%', active: true },
-      { name: 'Silverstone HQ Aero Windmill', val: '52%', active: false }
+      { name: 'High-Downforce Wing Flap', val: '44%', active: true }
     ]
   },
   {
@@ -158,13 +159,14 @@ export const F1_TEAMS = [
     shortName: 'Alpine',
     badge: '🏔️',
     logoText: 'ALPINE',
-    color: '#0090FF',
-    accentColor: '#FF87BC',
-    subAccent: '#001A33',
-    cockpitColor: '#0055AA',
-    haloColor: '#1A1A1A',
-    gloveColor: '#0090FF',
-    gloveAccent: '#FF87BC',
+    color: '#0055AA', // Alpine Racing Blue
+    accentColor: '#FF87BC', // BWT Hot Pink
+    subAccent: '#0A1E38',
+    bodyRoughness: 0.25,
+    bodyMetalness: 0.6,
+    suitColor: '#0055AA', // Blue Suit
+    suitAccent: '#FF87BC', // Pink Stripes
+    helmetColor: '#FF87BC',
     teamPrincipal: 'OLIVER OAKES',
     chassis: 'A525',
     base: 'ENSTONE, UNITED KINGDOM',
@@ -177,8 +179,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'BWT Cooling Channel', val: '35%', active: true },
-      { name: 'Aggressive Engine Mapping', val: '42%', active: true },
-      { name: 'Chassis Weight Reduction', val: '50%', active: false }
+      { name: 'Aggressive Engine Mapping', val: '42%', active: true }
     ]
   },
   {
@@ -187,13 +188,14 @@ export const F1_TEAMS = [
     shortName: 'Williams',
     badge: '⚡',
     logoText: 'WILLIAMS',
-    color: '#64C4FF',
-    accentColor: '#041E42',
+    color: '#041E42', // Williams Navy
+    accentColor: '#64C4FF', // Electric Cyan
     subAccent: '#00A3E0',
-    cockpitColor: '#041E42',
-    haloColor: '#121212',
-    gloveColor: '#041E42',
-    gloveAccent: '#64C4FF',
+    bodyRoughness: 0.3,
+    bodyMetalness: 0.6,
+    suitColor: '#041E42', // Navy Suit
+    suitAccent: '#64C4FF', // Cyan stripes
+    helmetColor: '#64C4FF',
     teamPrincipal: 'JAMES VOWLES',
     chassis: 'FW47',
     base: 'GROVE, UNITED KINGDOM',
@@ -206,8 +208,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'Low Drag Straight Line Speed', val: '38%', active: true },
-      { name: 'Chassis Torsional Rigidity', val: '45%', active: true },
-      { name: 'Strategic Undercut Priority', val: '54%', active: false }
+      { name: 'Chassis Torsional Rigidity', val: '45%', active: true }
     ]
   },
   {
@@ -216,13 +217,14 @@ export const F1_TEAMS = [
     shortName: 'RB Racing',
     badge: '🐂',
     logoText: 'VCARB',
-    color: '#6692FF',
-    accentColor: '#FFFFFF',
-    subAccent: '#E10600',
-    cockpitColor: '#102244',
-    haloColor: '#151515',
-    gloveColor: '#FFFFFF',
-    gloveAccent: '#6692FF',
+    color: '#1E40AF', // Gloss Royal Blue
+    accentColor: '#FFFFFF', // White
+    subAccent: '#E10600', // Red Bull Red
+    bodyRoughness: 0.15,
+    bodyMetalness: 0.7,
+    suitColor: '#FFFFFF', // White Suit
+    suitAccent: '#1E40AF', // Royal Blue stripes
+    helmetColor: '#1E40AF',
     teamPrincipal: 'LAURENT MEKIES',
     chassis: 'VCARB 02',
     base: 'FAENZA, ITALY',
@@ -235,8 +237,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'Brembo Brake Response Boost', val: '35%', active: true },
-      { name: 'Fast Apex Agility Package', val: '44%', active: true },
-      { name: 'Qualifying Engine Mode', val: '55%', active: false }
+      { name: 'Fast Apex Agility Package', val: '44%', active: true }
     ]
   },
   {
@@ -245,13 +246,14 @@ export const F1_TEAMS = [
     shortName: 'Kick Sauber',
     badge: '🟢',
     logoText: 'STAKE',
-    color: '#52E252',
-    accentColor: '#000000',
-    subAccent: '#1F1F1F',
-    cockpitColor: '#051405',
-    haloColor: '#0A0A0A',
-    gloveColor: '#000000',
-    gloveAccent: '#52E252',
+    color: '#15803D', // Intense Neon Green & Black
+    accentColor: '#39FF14', // Fluorescent Green
+    subAccent: '#051405',
+    bodyRoughness: 0.3,
+    bodyMetalness: 0.5,
+    suitColor: '#051405', // Carbon Black Suit
+    suitAccent: '#39FF14', // Fluorescent Green Stripes
+    helmetColor: '#39FF14',
     teamPrincipal: 'MATTIA BINOTTO',
     chassis: 'C45',
     base: 'HINWIL, SWITZERLAND',
@@ -264,8 +266,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'Neon Aero Surface Polish', val: '35%', active: true },
-      { name: 'Pit Equipment Overhaul', val: '45%', active: true },
-      { name: 'Audi Tech Transition Prototype', val: '60%', active: false }
+      { name: 'Pit Equipment Overhaul', val: '45%', active: true }
     ]
   },
   {
@@ -274,13 +275,14 @@ export const F1_TEAMS = [
     shortName: 'Haas F1',
     badge: '🔴',
     logoText: 'HAAS',
-    color: '#B6BABD',
-    accentColor: '#E10600',
-    subAccent: '#141414',
-    cockpitColor: '#222222',
-    haloColor: '#121212',
-    gloveColor: '#FFFFFF',
-    gloveAccent: '#E10600',
+    color: '#D1D5DB', // Bright Alpine White / Grey
+    accentColor: '#E10600', // Haas Red
+    subAccent: '#1F2937', // Charcoal
+    bodyRoughness: 0.3,
+    bodyMetalness: 0.4,
+    suitColor: '#FFFFFF', // Clean White Suit
+    suitAccent: '#E10600', // Red stripes
+    helmetColor: '#E10600',
     teamPrincipal: 'AYAOKOMATSU',
     chassis: 'VF-25',
     base: 'KANNAPOLIS, USA',
@@ -293,8 +295,7 @@ export const F1_TEAMS = [
     ],
     perks: [
       { name: 'Ferrari Wind Tunnel Data Link', val: '36%', active: true },
-      { name: 'Brake Cooling Shroud', val: '43%', active: true },
-      { name: 'Race Pace Optimization', val: '52%', active: false }
+      { name: 'Brake Cooling Shroud', val: '43%', active: true }
     ]
   }
 ];

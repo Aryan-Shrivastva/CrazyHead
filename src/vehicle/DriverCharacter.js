@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /**
- * 3D Stylized F1 Driver Character in Team Racing Overalls holding Helmet
+ * 3D Stylized F1 Driver Character in Official Team Racing Overalls & Helmet
  */
 export class DriverCharacter {
   constructor(driverData, teamData, isForeground = true) {
@@ -15,22 +15,23 @@ export class DriverCharacter {
   }
 
   initMaterials() {
-    // Suit Primary (Team color / White for Mercedes/Ferrari/Haas)
-    const suitColor = this.team.gloveColor || '#FFFFFF';
+    // Suit Primary Color
+    const suitColor = this.team.suitColor || '#FFFFFF';
     this.suitMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(suitColor),
-      roughness: 0.65,
+      roughness: 0.6,
       metalness: 0.15
     });
 
-    // Suit Accents / Team Stripes
+    // Suit Accents / Stripes
+    const accentColor = this.team.suitAccent || this.team.color;
     this.accentMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(this.team.color),
+      color: new THREE.Color(accentColor),
       roughness: 0.5,
       metalness: 0.2
     });
 
-    // Sub-accent / Belt
+    // Belt
     this.beltMaterial = new THREE.MeshStandardMaterial({
       color: 0x111111,
       roughness: 0.7
@@ -49,13 +50,14 @@ export class DriverCharacter {
     });
 
     // Racing Helmet
+    const helmetColor = this.team.helmetColor || this.team.accentColor || this.team.color;
     this.helmetMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(this.team.accentColor || this.team.color),
+      color: new THREE.Color(helmetColor),
       roughness: 0.2,
       metalness: 0.6
     });
 
-    // Helmet Visor (Tinted Gold / Dark Chrome)
+    // Helmet Visor
     this.visorMaterial = new THREE.MeshStandardMaterial({
       color: 0x111111,
       roughness: 0.1,
@@ -70,7 +72,6 @@ export class DriverCharacter {
   }
 
   buildCharacter() {
-    // Scale ~ 1.8m height
     const characterRoot = new THREE.Group();
 
     // 1. TORSO (Racing Suit Monocoque)
@@ -93,14 +94,12 @@ export class DriverCharacter {
     characterRoot.add(belt);
 
     // 2. LEGS & RACING PANTS
-    // Left Leg
     const legGeo = new THREE.CylinderGeometry(0.08, 0.07, 0.8, 12);
     const leftLeg = new THREE.Mesh(legGeo, this.suitMaterial);
     leftLeg.position.set(-0.11, 0.45, 0);
     leftLeg.castShadow = true;
     characterRoot.add(leftLeg);
 
-    // Right Leg
     const rightLeg = new THREE.Mesh(legGeo, this.suitMaterial);
     rightLeg.position.set(0.11, 0.45, 0);
     rightLeg.castShadow = true;
@@ -137,7 +136,6 @@ export class DriverCharacter {
     characterRoot.add(hair);
 
     // 4. ARMS & HANDS
-    // Right Arm (Resting at side)
     const armGeo = new THREE.CylinderGeometry(0.065, 0.055, 0.6, 10);
     const rightArm = new THREE.Mesh(armGeo, this.suitMaterial);
     rightArm.position.set(0.25, 1.15, 0);
@@ -149,7 +147,7 @@ export class DriverCharacter {
     rightHand.position.set(0.31, 0.82, 0);
     characterRoot.add(rightHand);
 
-    // Left Arm (Bent holding the helmet at hip level - matching photo!)
+    // Left Arm holding Helmet at hip
     const upperArmGeo = new THREE.CylinderGeometry(0.065, 0.06, 0.32, 10);
     const leftUpperArm = new THREE.Mesh(upperArmGeo, this.suitMaterial);
     leftUpperArm.position.set(-0.25, 1.25, 0.06);
@@ -162,7 +160,7 @@ export class DriverCharacter {
     leftForearm.rotation.set(-0.6, 0.3, 0);
     characterRoot.add(leftForearm);
 
-    // 5. RACING HELMET (Held under left arm)
+    // 5. RACING HELMET
     const helmetGroup = new THREE.Group();
     helmetGroup.position.set(-0.28, 1.05, 0.22);
     helmetGroup.rotation.set(0.2, -0.4, 0.3);
@@ -184,9 +182,18 @@ export class DriverCharacter {
   updateTeamAndDriver(driverData, teamData) {
     this.driver = driverData;
     this.team = teamData;
-    const suitColor = this.team.gloveColor || '#FFFFFF';
+
+    const suitColor = this.team.suitColor || '#FFFFFF';
+    const accentColor = this.team.suitAccent || this.team.color;
+    const helmetColor = this.team.helmetColor || this.team.accentColor || this.team.color;
+
     this.suitMaterial.color.set(suitColor);
-    this.accentMaterial.color.set(this.team.color);
-    this.helmetMaterial.color.set(this.team.accentColor || this.team.color);
+    this.suitMaterial.needsUpdate = true;
+
+    this.accentMaterial.color.set(accentColor);
+    this.accentMaterial.needsUpdate = true;
+
+    this.helmetMaterial.color.set(helmetColor);
+    this.helmetMaterial.needsUpdate = true;
   }
 }

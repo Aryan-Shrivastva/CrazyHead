@@ -28,27 +28,26 @@ export class F1Car {
   initMaterials() {
     // Carbon Fiber Material
     this.materials.carbon = new THREE.MeshStandardMaterial({
-      color: 0x181818,
+      color: 0x141414,
       roughness: 0.4,
-      metalness: 0.8,
-      bumpScale: 0.05
+      metalness: 0.8
     });
 
     // Dark Carbon for Halo & Splitters
     this.materials.darkCarbon = new THREE.MeshStandardMaterial({
-      color: 0x111111,
-      roughness: 0.3,
-      metalness: 0.7
+      color: 0x0D0D0D,
+      roughness: 0.35,
+      metalness: 0.75
     });
 
-    // Team Primary Livery (Glossy Painted Car Body)
+    // Team Primary Livery (Car Body, Nose Cone, Sidepods)
     this.materials.body = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.color),
-      roughness: 0.25,
-      metalness: 0.55
+      roughness: this.team.bodyRoughness !== undefined ? this.team.bodyRoughness : 0.25,
+      metalness: this.team.bodyMetalness !== undefined ? this.team.bodyMetalness : 0.55
     });
 
-    // Team Accent Livery
+    // Team Accent Livery (Front Flaps, Rear Wing, Accents)
     this.materials.accent = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.team.accentColor),
       roughness: 0.3,
@@ -85,13 +84,13 @@ export class F1Car {
 
     // Driver Gloves
     this.materials.gloves = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(this.team.gloveColor || '#FFFFFF'),
+      color: new THREE.Color(this.team.suitColor || '#FFFFFF'),
       roughness: 0.7,
       metalness: 0.1
     });
 
     this.materials.gloveAccent = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(this.team.gloveAccent || this.team.color),
+      color: new THREE.Color(this.team.suitAccent || this.team.color),
       roughness: 0.6,
       metalness: 0.2
     });
@@ -296,20 +295,16 @@ export class F1Car {
   }
 
   buildCockpitViewElements() {
-    // =========================================================================
     // 1. TITANIUM / CARBON FIBER HALO (MATCHING REFERENCE IMAGE)
-    // =========================================================================
     const haloGroup = new THREE.Group();
     haloGroup.position.set(0, 0.65, 0.45);
 
-    // Central Vertical Halo Strut (Runs down middle of view)
     const centerStrutGeo = new THREE.CylinderGeometry(0.024, 0.028, 0.42, 12);
     const centerStrut = new THREE.Mesh(centerStrutGeo, this.materials.darkCarbon);
     centerStrut.position.set(0, 0.05, 0.45);
     centerStrut.rotation.x = -0.15;
     haloGroup.add(centerStrut);
 
-    // Top Curved Halo Hoop
     const haloCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-0.32, 0.22, -0.4),
       new THREE.Vector3(-0.34, 0.24, 0.0),
@@ -324,7 +319,6 @@ export class F1Car {
     this.haloMesh = new THREE.Mesh(haloTubeGeo, this.materials.darkCarbon);
     haloGroup.add(this.haloMesh);
 
-    // Left and Right Rear Mounts
     const mountGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.25, 8);
     const leftMount = new THREE.Mesh(mountGeo, this.materials.darkCarbon);
     leftMount.position.set(-0.32, 0.12, -0.4);
@@ -338,18 +332,14 @@ export class F1Car {
 
     this.group.add(haloGroup);
 
-    // =========================================================================
     // 2. F1 MULTI-FUNCTION STEERING WHEEL & DIGITAL LCD TELEMETRY SCREEN
-    // =========================================================================
     this.steeringWheel = new THREE.Group();
     this.steeringWheel.position.set(0, 0.52, 0.55);
 
-    // Carbon Wheel Base
     const wheelBaseGeo = new THREE.BoxGeometry(0.38, 0.24, 0.04);
     const wheelBase = new THREE.Mesh(wheelBaseGeo, this.materials.darkCarbon);
     this.steeringWheel.add(wheelBase);
 
-    // Ergonomic Grips (Left & Right)
     const gripGeo = new THREE.CylinderGeometry(0.025, 0.028, 0.22, 12);
     const leftGrip = new THREE.Mesh(gripGeo, this.materials.tireRubber);
     leftGrip.position.set(-0.18, 0, 0.01);
@@ -359,7 +349,6 @@ export class F1Car {
     rightGrip.position.set(0.18, 0, 0.01);
     this.steeringWheel.add(rightGrip);
 
-    // Create Steering Screen Canvas Texture
     this.steeringDisplayCanvas = document.createElement('canvas');
     this.steeringDisplayCanvas.width = 512;
     this.steeringDisplayCanvas.height = 280;
@@ -378,7 +367,6 @@ export class F1Car {
     screenMesh.position.set(0, 0.01, 0.022);
     this.steeringWheel.add(screenMesh);
 
-    // Steering Wheel Buttons & Dials
     const buttonColors = [0xE80020, 0x00D2BE, 0xFFC800, 0x34C759, 0x007AFF, 0xAF52DE];
     const buttonPositions = [
       [-0.12, 0.07], [0.12, 0.07],
@@ -398,7 +386,6 @@ export class F1Car {
       this.steeringWheel.add(btn);
     });
 
-    // PADDOCK / HQ Interactive Button on Steering Wheel
     const paddockBtnGeo = new THREE.BoxGeometry(0.06, 0.022, 0.015);
     const paddockBtnMat = new THREE.MeshStandardMaterial({
       color: 0xE80020,
@@ -410,10 +397,7 @@ export class F1Car {
     paddockBtn.name = 'STEERING_PADDOCK_BTN';
     this.steeringWheel.add(paddockBtn);
 
-    // =========================================================================
-    // 3. DRIVER HANDS & RACING GLOVES GRIPPING WHEEL (MATCHING PHOTO)
-    // =========================================================================
-    // Left Hand & Glove
+    // 3. DRIVER HANDS & GLOVES
     const leftHand = new THREE.Group();
     leftHand.position.set(-0.19, -0.01, 0.02);
 
@@ -422,7 +406,6 @@ export class F1Car {
     const leftGloveMesh = new THREE.Mesh(handGeo, this.materials.gloves);
     leftHand.add(leftGloveMesh);
 
-    // Wrist / Forearm sleeve
     const armGeo = new THREE.CylinderGeometry(0.036, 0.042, 0.25, 12);
     armGeo.rotateX(-Math.PI / 4);
     const leftArm = new THREE.Mesh(armGeo, this.materials.gloveAccent);
@@ -430,7 +413,6 @@ export class F1Car {
     leftHand.add(leftArm);
     this.steeringWheel.add(leftHand);
 
-    // Right Hand & Glove
     const rightHand = new THREE.Group();
     rightHand.position.set(0.19, -0.01, 0.02);
 
@@ -442,7 +424,7 @@ export class F1Car {
     rightHand.add(rightArm);
     this.steeringWheel.add(rightHand);
 
-    // Cockpit Side Mirrors (visible in first-person view)
+    // Side Mirrors
     const mirrorGeo = new THREE.BoxGeometry(0.16, 0.08, 0.06);
     const leftMirror = new THREE.Mesh(mirrorGeo, this.materials.body);
     leftMirror.position.set(-0.48, 0.54, 0.6);
@@ -463,11 +445,9 @@ export class F1Car {
     const w = this.steeringDisplayCanvas.width;
     const h = this.steeringDisplayCanvas.height;
 
-    // Background
     ctx.fillStyle = '#06090E';
     ctx.fillRect(0, 0, w, h);
 
-    // Top RPM LED Lights Strip
     const ledCount = 15;
     const ledWidth = 24;
     const startX = (w - (ledCount * (ledWidth + 4))) / 2;
@@ -483,30 +463,25 @@ export class F1Car {
       ctx.fillRect(startX + i * (ledWidth + 4), 10, ledWidth, 12);
     }
 
-    // Top Bar (DRS / DELTA)
     ctx.fillStyle = '#8E9BAE';
     ctx.font = 'bold 18px "Orbitron", monospace';
     ctx.fillText('DRS K2', 30, 48);
     ctx.fillText('+0.183 ▲', w - 130, 48);
 
-    // Center Large Gear Indicator
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '900 82px "Orbitron", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`${gear}`, w / 2, 135);
 
-    // Center Speed & RPM
     ctx.fillStyle = '#00D2BE';
     ctx.font = 'bold 28px "Orbitron", monospace';
     ctx.fillText(`${Math.round(speedKmH)} KM/H`, w / 2, 175);
 
-    // Battery / ERS Bar
     ctx.fillStyle = '#1A2333';
     ctx.fillRect(40, 195, w - 80, 18);
     ctx.fillStyle = '#00D2BE';
     ctx.fillRect(40, 195, (w - 80) * (batteryPercent / 100), 18);
 
-    // Bottom Mode & Info
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 16px "Orbitron", monospace';
     ctx.textAlign = 'left';
@@ -516,7 +491,6 @@ export class F1Car {
     ctx.fillStyle = '#FFC800';
     ctx.fillText(mode, w - 40, 240);
 
-    // Tire Temps
     ctx.fillStyle = '#34C759';
     ctx.font = '14px monospace';
     ctx.textAlign = 'left';
@@ -535,35 +509,41 @@ export class F1Car {
   updateTeam(team) {
     this.team = team;
     this.materials.body.color.set(team.color);
+    if (team.bodyRoughness !== undefined) this.materials.body.roughness = team.bodyRoughness;
+    if (team.bodyMetalness !== undefined) this.materials.body.metalness = team.bodyMetalness;
+    this.materials.body.needsUpdate = true;
+
     this.materials.accent.color.set(team.accentColor);
+    this.materials.accent.needsUpdate = true;
+
     if (this.materials.subAccent) {
       this.materials.subAccent.color.set(team.subAccent || '#111111');
+      this.materials.subAccent.needsUpdate = true;
     }
+
     if (this.materials.gloves) {
-      this.materials.gloves.color.set(team.gloveColor || '#FFFFFF');
+      this.materials.gloves.color.set(team.suitColor || '#FFFFFF');
+      this.materials.gloves.needsUpdate = true;
     }
     if (this.materials.gloveAccent) {
-      this.materials.gloveAccent.color.set(team.gloveAccent || team.color);
+      this.materials.gloveAccent.color.set(team.suitAccent || team.color);
+      this.materials.gloveAccent.needsUpdate = true;
     }
   }
 
   update(steeringAngle, speedRatio, isDrsOpen) {
-    // Wheel Steer Rotation
     this.steerWheels.forEach(wheel => {
       wheel.rotation.y = steeringAngle * 0.5;
     });
 
-    // In-Cockpit Steering Wheel Rotation
     if (this.steeringWheel) {
       this.steeringWheel.rotation.z = -steeringAngle * 1.6;
     }
 
-    // Wheel Roll Spin
     this.wheels.forEach(wheel => {
       wheel.children[0].rotation.x += speedRatio * 0.4;
     });
 
-    // DRS Flap Movement
     if (this.drsFlap) {
       this.drsFlap.rotation.x = isDrsOpen ? -0.35 : 0;
     }
