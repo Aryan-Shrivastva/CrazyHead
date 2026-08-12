@@ -126,11 +126,11 @@
       <div class="gantry-status-text" id="gantry-status-text">GRID FORMATION • HOLD REV</div>
     </div>
 
-    <!-- Top Left: F1 Race Leaderboard Tower -->
+    <!-- Top Left: Live F1 Race Leaderboard Tower (Dynamic 20 Drivers) -->
     <div class="f1-leaderboard-tower">
       <div class="tower-header">
         <span class="f1-mini-logo">F1®</span>
-        <span class="tower-title">RACE</span>
+        <span class="tower-title">RACE LEADERBOARD</span>
       </div>
       <div class="tower-lap-info">
         <span class="lap-label">LAP</span>
@@ -139,29 +139,21 @@
       <div class="tower-drivers" id="hud-leaderboard-list"></div>
     </div>
 
-    <!-- Top Right: Sector Timing Bar -->
+    <!-- Top Right: Sector Timing & 3 Lap Times Display (Current, Last, Best) -->
     <div class="f1-timing-bar">
-      <div class="sector-boxes">
-        <div class="sector-item" id="sector-1-box">
-          <span class="sector-label">S1</span>
-          <span class="sector-time" id="sector-1-time">--.---</span>
+      <div class="lap-timing-stack">
+        <div class="timing-cell current">
+          <span class="time-label">CURRENT LAP</span>
+          <span class="time-value" id="hud-current-lap-time">0:00.000</span>
         </div>
-        <div class="sector-item" id="sector-2-box">
-          <span class="sector-label">S2</span>
-          <span class="sector-time" id="sector-2-time">--.---</span>
+        <div class="timing-cell last">
+          <span class="time-label">LAST LAP</span>
+          <span class="time-value" id="hud-last-lap-time">--:--.---</span>
         </div>
-        <div class="sector-item" id="sector-3-box">
-          <span class="sector-label">S3</span>
-          <span class="sector-time" id="sector-3-time">--.---</span>
+        <div class="timing-cell best">
+          <span class="time-label">BEST LAP</span>
+          <span class="time-value purple" id="hud-best-lap-time">1:21.046</span>
         </div>
-      </div>
-      <div class="current-lap-box">
-        <span class="time-label">LAP TIME</span>
-        <span class="current-time-display" id="hud-current-lap-time">0:00.000</span>
-      </div>
-      <div class="best-lap-box">
-        <span class="time-label">BEST</span>
-        <span class="best-time-display" id="hud-best-lap-time">1:21.046</span>
       </div>
     </div>
 
@@ -171,17 +163,17 @@
       <div class="radio-text" id="radio-text">"Box Box, Head to the Paddock!"</div>
     </div>
 
-    <!-- Bottom Left: Track Minimap -->
+    <!-- Bottom Left: Full Monza Minimap (Auto-fitted, No Cutting) -->
     <div class="f1-minimap-container">
       <div class="minimap-header">AUTODROMO NAZIONALE MONZA</div>
-      <canvas id="minimap-canvas" width="220" height="150"></canvas>
+      <canvas id="minimap-canvas" width="240" height="150"></canvas>
       <div class="drs-status-box" id="drs-indicator">
         <span class="drs-label">DRS</span>
         <span class="drs-state" id="drs-state-text">AVAILABLE</span>
       </div>
     </div>
 
-    <!-- Bottom Center: F1 Tachometer & Telemetry Gauge (Cockpit Match) -->
+    <!-- Bottom Center: F1 Tachometer & Telemetry Gauge -->
     <div class="f1-tachometer-hud">
       <div class="rpm-shift-lights" id="rpm-shift-lights">
         <span class="rpm-led green"></span>
@@ -315,9 +307,9 @@
       </div>
     </div>
 
-    <!-- Center Monitor Stack (Top Info Panel & Bottom Project Screen) -->
+    <!-- Center Monitor Stack -->
     <div class="paddock-center-console">
-      <!-- Top Monitor: Header, Description & Return -->
+      <!-- Top Monitor -->
       <div class="paddock-top-monitor">
         <div class="top-monitor-nav">
           <button id="paddock-prev-btn" class="monitor-nav-btn">PREVIOUS</button>
@@ -336,7 +328,7 @@
         </div>
       </div>
 
-      <!-- Bottom CRT Screen: Interactive Project Terminal -->
+      <!-- Bottom CRT Screen -->
       <div class="paddock-bottom-screen">
         <div class="terminal-sidebar-icons">
           <a id="project-web-link" href="https://github.com/Aryan-Shrivastva/CrazyHead" target="_blank" rel="noopener noreferrer" class="term-icon-btn" title="Launch Project Live Demo">
@@ -366,7 +358,7 @@
       </div>
     </div>
 
-    <!-- Right Wall: Framed Driver Portraits & Posters -->
+    <!-- Right Wall Framed Posters -->
     <div class="garage-wall-portraits">
       <div class="framed-portrait poster-champion">
         <div class="portrait-photo podium-photo">🏆</div>
@@ -378,7 +370,7 @@
       </div>
     </div>
 
-    <!-- Desk / Keyboard Foreground -->
+    <!-- Workbench Desk Foreground -->
     <div class="garage-desk-foreground">
       <div class="desk-keyboard"></div>
       <div class="desk-mousepad"></div>

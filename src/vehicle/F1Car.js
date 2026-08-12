@@ -234,18 +234,18 @@ export class F1Car {
     visor.position.set(0, 0.53, 0.35);
     this.group.add(visor);
 
-    // 8. TITANIUM HALO
-    const haloCenterGeo = new THREE.CylinderGeometry(0.022, 0.024, 0.38, 8);
+    // 8. TITANIUM HALO (Low-profile aerodynamic design)
+    const haloCenterGeo = new THREE.CylinderGeometry(0.014, 0.016, 0.28, 8);
     const haloCenter = new THREE.Mesh(haloCenterGeo, this.materials.carbon);
-    haloCenter.position.set(0, 0.62, 0.55);
+    haloCenter.position.set(0, 0.54, 0.55);
     haloCenter.rotation.x = -0.12;
     this.group.add(haloCenter);
 
-    const haloRingGeo = new THREE.TorusGeometry(0.24, 0.024, 8, 16, Math.PI);
+    const haloRingGeo = new THREE.TorusGeometry(0.24, 0.016, 8, 16, Math.PI);
     haloRingGeo.rotateX(Math.PI / 2);
     this.haloMesh = new THREE.Mesh(haloRingGeo, this.materials.carbon);
-    this.haloMesh.position.set(0, 0.74, 0.32);
-    this.haloMesh.scale.set(1.1, 1, 1.4);
+    this.haloMesh.position.set(0, 0.64, 0.32);
+    this.haloMesh.scale.set(1.05, 0.9, 1.35);
     this.group.add(this.haloMesh);
 
     // 9. REAR WING

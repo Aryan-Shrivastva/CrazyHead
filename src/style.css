@@ -782,76 +782,59 @@ html, body {
   text-align: right;
 }
 
-/* Top Right: Sector Timing Bar */
+/* Top Right: Sector Timing & 3-Lap Timing Stack */
 .f1-timing-bar {
   position: absolute;
   top: 20px;
   right: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(10, 14, 20, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 14px;
+  background: rgba(10, 14, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 8px 16px;
-  border-radius: 8px;
-  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   pointer-events: auto;
 }
 
-.sector-boxes { display: flex; gap: 6px; }
-
-.sector-item {
+.lap-timing-stack {
   display: flex;
-  flex-direction: column;
+  gap: 16px;
   align-items: center;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 4px 8px;
-  border-radius: 4px;
-  border-top: 2px solid #555;
 }
 
-.sector-item.purple { border-top-color: #AF52DE; }
-.sector-item.green { border-top-color: #34C759; }
-.sector-item.yellow { border-top-color: #FFCC00; }
-
-.sector-label {
-  font-family: var(--font-telemetry);
-  font-size: 9px;
-  color: var(--f1-muted);
-}
-
-.sector-time {
-  font-family: var(--font-telemetry);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.current-lap-box, .best-lap-box {
+.timing-cell {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: flex-start;
+  padding: 0 6px;
+}
+
+.timing-cell.last, .timing-cell.best {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
   padding-left: 12px;
 }
 
-.time-label {
+.timing-cell .time-label {
   font-family: var(--font-telemetry);
   font-size: 9px;
   color: var(--f1-muted);
   letter-spacing: 1px;
+  margin-bottom: 2px;
 }
 
-.current-time-display {
+.timing-cell .time-value {
   font-family: var(--font-telemetry);
   font-size: 16px;
   font-weight: 800;
-  color: #FFF;
+  color: #FFFFFF;
 }
 
-.best-time-display {
-  font-family: var(--font-telemetry);
-  font-size: 14px;
-  font-weight: 700;
-  color: #AF52DE;
+.timing-cell .time-value.purple {
+  color: #D154FF;
+  text-shadow: 0 0 10px rgba(209, 84, 255, 0.6);
 }
 
 /* Radio Banner */

@@ -96,16 +96,16 @@ export class CameraController {
     const currentSpeed = physics.velocity.length();
 
     if (this.mode === 'cockpit') {
-      // 1. COCKPIT / HALO VIEW (MATCHING USER REFERENCE PHOTO)
+      // 1. COCKPIT / DRIVER EYE VIEW (UNOBSTRUCTED FORWARD VISION)
       const forward = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
-      const eyeOffset = new THREE.Vector3(0, 0.72, 0.15);
+      const eyeOffset = new THREE.Vector3(0, 0.92, 0.30);
       eyeOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), heading);
 
       const targetPos = carPos.clone().add(eyeOffset);
       this.camera.position.copy(targetPos);
 
-      // Look straight ahead down the nose cone
-      const lookTarget = carPos.clone().add(forward.clone().multiplyScalar(25.0)).add(new THREE.Vector3(0, 0.65, 0));
+      // Look straight ahead down the track towards the horizon
+      const lookTarget = carPos.clone().add(forward.clone().multiplyScalar(35.0)).add(new THREE.Vector3(0, 0.85, 0));
       this.camera.lookAt(lookTarget);
 
       // Dynamic High-Speed FOV Expansion

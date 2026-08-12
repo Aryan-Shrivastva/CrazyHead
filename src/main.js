@@ -95,8 +95,8 @@ class F1PortfolioApp {
 
   setupThreeScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x06080C);
-    this.scene.fog = new THREE.FogExp2(0x06080C, 0.0008);
+    this.scene.background = new THREE.Color(0x7AB8EB);
+    this.scene.fog = new THREE.FogExp2(0xC2E2F5, 0.00035);
 
     this.camera = new THREE.PerspectiveCamera(
       45,
@@ -650,10 +650,10 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      // Update AI Cars with 300 km/h straights & 30% corner speed reduction
+      // Update AI Cars with balanced pace
       this.gridManager.update(dt);
 
-      this.telemetryHUD.update(this.physics, this.monzaTrack);
+      this.telemetryHUD.update(this.physics, this.monzaTrack, this.gridManager);
 
       this.dirLight.position.set(
         this.physics.position.x + 80,

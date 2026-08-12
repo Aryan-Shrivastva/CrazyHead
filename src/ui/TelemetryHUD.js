@@ -1,5 +1,11 @@
+import * as THREE from 'three';
+
 /**
- * Cockpit & Race Telemetry HUD Controller (Matching F1 TV Broadcast & Cockpit Layout)
+ * Cockpit & Race Telemetry HUD Controller
+ * Features:
+ * 1. Dynamic Live 20-Driver Leaderboard (Overtaking updates standings in real time)
+ * 2. 3-Lap Timing Stack (Current Lap running clock, Last Lap time, Best Lap record)
+ * 3. Exact Monza Minimap (Auto-fitted bounds with zero clipping + all rival car blips)
  */
 export class TelemetryHUD {
   constructor(callbacks) {
@@ -18,6 +24,7 @@ export class TelemetryHUD {
     // Timing & Leaderboard Elements
     this.lapCounterEl = document.getElementById('hud-lap-counter');
     this.currentLapTimeEl = document.getElementById('hud-current-lap-time');
+    this.lastLapTimeEl = document.getElementById('hud-last-lap-time');
     this.bestLapTimeEl = document.getElementById('hud-best-lap-time');
     this.leaderboardListEl = document.getElementById('hud-leaderboard-list');
 
@@ -33,12 +40,20 @@ export class TelemetryHUD {
     this.exitBtn = document.getElementById('hud-exit-btn');
     this.radioBanner = document.getElementById('radio-banner');
 
-    // Lap Timing State
+    // Lap Timing & Tracking State
+    this.playerTeam = null;
+    this.playerDriver = null;
     this.currentLap = 1;
     this.maxLaps = 60;
     this.lapStartTime = 0;
+    this.lastLapTime = null; // Stored in seconds
     this.bestLapTime = 81.046; // Monza record ~1:21.046
-    this.playerTeamColor = '#E80020';
+
+    this.prevPlayerProgress = 0.05;
+    this.playerLapsCompleted = 0;
+
+    // Cached Monza Track Bounds for Minimap Auto-fit
+    this.mapBounds = null;
 
     this.setupListeners();
   }
@@ -73,43 +88,26 @@ export class TelemetryHUD {
   }
 
   initRace(team, driver) {
+    this.playerTeam = team;
+    this.playerDriver = driver;
     this.currentLap = 1;
+    this.playerLapsCompleted = 0;
     this.lapStartTime = Date.now();
-    this.playerTeamColor = team.color || '#E80020';
-    this.updateLeaderboard(team, driver);
+    this.lastLapTime = null;
+    this.prevPlayerProgress = 0.05;
+
+    if (this.lastLapTimeEl) this.lastLapTimeEl.textContent = '--:--.---';
+    if (this.bestLapTimeEl) this.bestLapTimeEl.textContent = this.formatTime(this.bestLapTime);
   }
 
-  updateLeaderboard(team, driver) {
-    if (!this.leaderboardListEl) return;
-
-    const rivals = [
-      { name: driver.code || 'YOU', teamColor: team.color, gap: 'LEADER', isPlayer: true },
-      { name: 'TSU', teamColor: '#1E40AF', gap: '+0.214' },
-      { name: 'ANT', teamColor: '#00D2BE', gap: '+0.589' },
-      { name: 'HAM', teamColor: '#E80020', gap: '+0.985' },
-      { name: 'VER', teamColor: '#162B55', gap: '+1.340' }
-    ];
-
-    this.leaderboardListEl.innerHTML = '';
-    rivals.forEach((r, idx) => {
-      const row = document.createElement('div');
-      row.className = `tower-row ${r.isPlayer ? 'player' : ''}`;
-      row.innerHTML = `
-        <div class="tower-row-left">
-          <span class="tower-pos">${idx + 1}</span>
-          <span class="tower-team-indicator" style="background: ${r.teamColor}"></span>
-          <span class="tower-driver-name">${r.name}</span>
-        </div>
-        <div class="tower-row-right">
-          <span class="tire-badge soft">S</span>
-          <span class="tower-gap">${r.gap}</span>
-        </div>
-      `;
-      this.leaderboardListEl.appendChild(row);
-    });
+  formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '--:--.---';
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(3);
+    return `${mins}:${secs.padStart(6, '0')}`;
   }
 
-  update(physics, monzaTrack) {
+  update(physics, monzaTrack, gridManager) {
     const speedKmH = Math.round(physics.velocity.length() * 3.6);
     const gear = physics.gear;
     const rpm = Math.round(physics.rpm);
@@ -141,13 +139,40 @@ export class TelemetryHUD {
       }
     });
 
-    // Lap Timing
+    // Track Progress & Start/Finish Line Cross Detection
+    let playerU = 0.05;
+    if (monzaTrack) {
+      const nearest = monzaTrack.getNearestTrackPoint(physics.position);
+      playerU = nearest.u || 0.05;
+    }
+
+    // Detect lap completion (Crossing from u > 0.92 to u < 0.08)
+    if (this.prevPlayerProgress > 0.90 && playerU < 0.10) {
+      this.playerLapsCompleted++;
+      this.currentLap = this.playerLapsCompleted + 1;
+
+      const elapsedLapSeconds = (Date.now() - this.lapStartTime) / 1000;
+      this.lastLapTime = elapsedLapSeconds;
+
+      if (!this.bestLapTime || elapsedLapSeconds < this.bestLapTime) {
+        this.bestLapTime = elapsedLapSeconds;
+        this.showRadioMessage(`"PURPLE LAP! ${this.formatTime(elapsedLapSeconds)} - Fastest Lap!"`);
+      } else {
+        this.showRadioMessage(`"Lap ${this.playerLapsCompleted} Complete: ${this.formatTime(elapsedLapSeconds)}"`);
+      }
+
+      if (this.lastLapTimeEl) this.lastLapTimeEl.textContent = this.formatTime(this.lastLapTime);
+      if (this.bestLapTimeEl) this.bestLapTimeEl.textContent = this.formatTime(this.bestLapTime);
+
+      this.lapStartTime = Date.now();
+    }
+    this.prevPlayerProgress = playerU;
+
+    // Live Current Lap Timer
     if (this.lapStartTime > 0) {
-      const elapsed = (Date.now() - this.lapStartTime) / 1000;
-      const mins = Math.floor(elapsed / 60);
-      const secs = (elapsed % 60).toFixed(3);
+      const liveElapsed = (Date.now() - this.lapStartTime) / 1000;
       if (this.currentLapTimeEl) {
-        this.currentLapTimeEl.textContent = `${mins}:${secs.padStart(6, '0')}`;
+        this.currentLapTimeEl.textContent = this.formatTime(liveElapsed);
       }
     }
 
@@ -156,11 +181,78 @@ export class TelemetryHUD {
       this.lapCounterEl.innerHTML = `${this.currentLap} <span class="lap-total">/ ${this.maxLaps}</span>`;
     }
 
-    // Render Clean Monza Minimap
-    this.renderMinimap(physics.position, monzaTrack);
+    // Update Live 20-Car Dynamic Standings
+    this.updateDynamicStandings(playerU, gridManager);
+
+    // Render Full Monza Minimap
+    this.renderMinimap(physics.position, monzaTrack, gridManager);
   }
 
-  renderMinimap(playerPos, monzaTrack) {
+  updateDynamicStandings(playerU, gridManager) {
+    if (!this.leaderboardListEl) return;
+
+    // Gather all 20 racers
+    const racers = [];
+
+    // 1. Player
+    const playerTotalScore = (this.playerLapsCompleted * 1.0) + playerU;
+    racers.push({
+      name: this.playerDriver?.code || 'YOU',
+      fullName: this.playerDriver?.name || 'Player',
+      teamColor: this.playerTeam?.color || '#E80020',
+      tire: 'S',
+      score: playerTotalScore,
+      isPlayer: true
+    });
+
+    // 2. AI Competitors
+    if (gridManager && gridManager.gridCars) {
+      gridManager.gridCars.forEach(ai => {
+        const aiScore = (this.playerLapsCompleted * 1.0) + (ai.progress || 0);
+        racers.push({
+          name: ai.driver?.code || 'DRV',
+          fullName: ai.driver?.name || 'Driver',
+          teamColor: ai.team?.color || '#00D2BE',
+          tire: ai.slot % 3 === 0 ? 'M' : 'S',
+          score: aiScore,
+          isPlayer: false
+        });
+      });
+    }
+
+    // Sort descending (highest score = 1st place)
+    racers.sort((a, b) => b.score - a.score);
+
+    // Leader score for gap calculation
+    const leaderScore = racers[0].score;
+
+    this.leaderboardListEl.innerHTML = '';
+    // Show top 8 in the tower
+    racers.slice(0, 8).forEach((r, idx) => {
+      let gapText = 'LEADER';
+      if (idx > 0) {
+        const delta = (leaderScore - r.score) * 80; // approximate gap in seconds
+        gapText = `+${Math.max(0.08, delta).toFixed(3)}`;
+      }
+
+      const row = document.createElement('div');
+      row.className = `tower-row ${r.isPlayer ? 'player' : ''}`;
+      row.innerHTML = `
+        <div class="tower-row-left">
+          <span class="tower-pos">${idx + 1}</span>
+          <span class="tower-team-indicator" style="background: ${r.teamColor}"></span>
+          <span class="tower-driver-name">${r.name}</span>
+        </div>
+        <div class="tower-row-right">
+          <span class="tire-badge ${r.tire === 'S' ? 'soft' : 'medium'}">${r.tire}</span>
+          <span class="tower-gap">${gapText}</span>
+        </div>
+      `;
+      this.leaderboardListEl.appendChild(row);
+    });
+  }
+
+  renderMinimap(playerPos, monzaTrack, gridManager) {
     if (!this.minimapCtx || !monzaTrack || !monzaTrack.curve) return;
     const ctx = this.minimapCtx;
     const w = this.minimapCanvas.width;
@@ -168,18 +260,31 @@ export class TelemetryHUD {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Exact Monza Spline Bounds: X: -500 to 100, Z: -650 to 700
-    const minX = -500, maxX = 90;
-    const minZ = -650, maxZ = 700;
-
-    // Coordinate mapping to 2D canvas (Rotated/aligned to match official F1 broadcast diagram)
-    const mapX = (x, z) => 24 + ((z - minZ) / (maxZ - minZ)) * (w - 48);
-    const mapY = (x, z) => h - 20 - ((x - minX) / (maxX - minX)) * (h - 40);
-
     const points = monzaTrack.curve.getPoints(120);
 
+    // Calculate auto-fit bounding box once
+    if (!this.mapBounds) {
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      points.forEach(p => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.z < minZ) minZ = p.z;
+        if (p.z > maxZ) maxZ = p.z;
+      });
+      this.mapBounds = { minX, maxX, minZ, maxZ };
+    }
+
+    const { minX, maxX, minZ, maxZ } = this.mapBounds;
+    const padding = 16;
+    const usableW = w - padding * 2;
+    const usableH = h - padding * 2;
+
+    // Coordinate mapping that guarantees 100% of Monza fits inside canvas without cutoff
+    const mapX = (x, z) => padding + ((z - minZ) / (maxZ - minZ)) * usableW;
+    const mapY = (x, z) => h - padding - ((x - minX) / (maxX - minX)) * usableH;
+
     // 1. Draw Clean Track Glow
-    ctx.strokeStyle = 'rgba(0, 210, 190, 0.2)';
+    ctx.strokeStyle = 'rgba(0, 210, 190, 0.25)';
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -193,7 +298,7 @@ export class TelemetryHUD {
     ctx.closePath();
     ctx.stroke();
 
-    // 2. Draw Clean Solid White Track Silhouette (Matching User Photo)
+    // 2. Draw Crisp White Track Silhouette (Matching Official Monza Circuit)
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -206,10 +311,10 @@ export class TelemetryHUD {
     ctx.closePath();
     ctx.stroke();
 
-    // 3. Draw Checkered Start/Finish Line Indicator
-    const startPoint = points[0];
-    const sX = mapX(startPoint.x, startPoint.z);
-    const sY = mapY(startPoint.x, startPoint.z);
+    // 3. Draw Yellow Start/Finish Checker Line
+    const startPt = points[0];
+    const sX = mapX(startPt.x, startPt.z);
+    const sY = mapY(startPt.x, startPt.z);
     ctx.strokeStyle = '#FFF200';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -217,23 +322,35 @@ export class TelemetryHUD {
     ctx.lineTo(sX + 4, sY + 4);
     ctx.stroke();
 
-    // 4. Draw Player Live Beacon
+    // 4. Draw AI Competitors Live Dots
+    if (gridManager && gridManager.gridCars) {
+      gridManager.gridCars.forEach(ai => {
+        const ax = mapX(ai.position.x, ai.position.z);
+        const ay = mapY(ai.position.x, ai.position.z);
+
+        ctx.fillStyle = ai.team?.color || '#FFA500';
+        ctx.beginPath();
+        ctx.arc(ax, ay, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // 5. Draw Player Live Beacon
     const pX = mapX(playerPos.x, playerPos.z);
     const pY = mapY(playerPos.x, playerPos.z);
+    const teamCol = this.playerTeam?.color || '#E80020';
 
-    // Glowing Radar Ping
-    ctx.fillStyle = `${this.playerTeamColor}55`;
+    ctx.fillStyle = `${teamCol}66`;
     ctx.beginPath();
     ctx.arc(pX, pY, 7, 0, Math.PI * 2);
     ctx.fill();
 
-    // Core Beacon
-    ctx.fillStyle = this.playerTeamColor;
+    ctx.fillStyle = teamCol;
     ctx.beginPath();
     ctx.arc(pX, pY, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
 
