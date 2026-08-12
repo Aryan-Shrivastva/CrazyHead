@@ -13,7 +13,7 @@ import { TelemetryHUD } from './ui/TelemetryHUD.js';
 import { PaddockHUD } from './ui/PaddockHUD.js';
 
 /**
- * Formula 1 Monza Portfolio - Main Application Lifecycle Controller
+ * Formula 1 Grand Prix Portfolio - Main Application Controller
  */
 class F1PortfolioApp {
   constructor() {
@@ -21,19 +21,25 @@ class F1PortfolioApp {
     this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock'
     this.lobbyPage = 1; // 1 = Team Select, 2 = Driver Select
 
-    this.selectedTeam = F1_TEAMS[0];
-    this.selectedDriver = this.selectedTeam.drivers[0];
+    this.selectedTeam = F1_TEAMS[0]; // Ferrari default
+    this.selectedDriver = this.selectedTeam.drivers[0]; // Leclerc default
 
-    // Core Three.js Components
+    // Three.js Core
     this.scene = null;
     this.camera = null;
     this.renderer = null;
     this.clock = new THREE.Clock();
 
-    // Scene Lights
+    // Studio & Showroom Lighting
     this.dirLight = null;
     this.hemiLight = null;
     this.showroomSpotlight = null;
+    this.showroomFillLight = null;
+    this.showroomRimLight = null;
+
+    // Showroom Stage Elements
+    this.showroomPodium = null;
+    this.podiumRingMaterial = null;
 
     // Subsystems
     this.soundManager = new SoundManager();
@@ -41,7 +47,7 @@ class F1PortfolioApp {
     this.f1Car = null;
     this.driver1Char = null; // 3D Driver 1
     this.driver2Char = null; // 3D Driver 2 (Teammate)
-    this.gridManager = null; // 20-car grid manager
+    this.gridManager = null; // 20-car starting grid
     this.physics = new VehiclePhysics();
     this.cameraController = null;
 
@@ -54,7 +60,7 @@ class F1PortfolioApp {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
-    // Input States
+    // Controls Input State
     this.keys = {
       forward: false,
       backward: false,
@@ -74,20 +80,23 @@ class F1PortfolioApp {
     this.setupInputListeners();
     this.setupSoundToggle();
 
+    // Apply initial team styling
+    this.onTeamChange(this.selectedTeam, this.selectedDriver, 1);
+
     // Start Animation Loop
     this.animate();
   }
 
   setupThreeScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x080A0F);
-    this.scene.fog = new THREE.FogExp2(0x080A0F, 0.0016);
+    this.scene.background = new THREE.Color(0x06080C);
+    this.scene.fog = new THREE.FogExp2(0x06080C, 0.0012);
 
     this.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      2000
+      2500
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -100,7 +109,7 @@ class F1PortfolioApp {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.25;
 
     this.cameraController = new CameraController(this.camera, this.renderer.domElement);
 
@@ -108,11 +117,13 @@ class F1PortfolioApp {
   }
 
   setupLighting() {
-    this.hemiLight = new THREE.HemisphereLight(0xEBF4FF, 0x1A251A, 0.7);
+    // Ambient / Hemisphere Light
+    this.hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0x1A2030, 1.2);
     this.scene.add(this.hemiLight);
 
-    this.dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
-    this.dirLight.position.set(120, 200, 100);
+    // Primary Sunlight for Monza Track
+    this.dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.8);
+    this.dirLight.position.set(80, 160, 80);
     this.dirLight.castShadow = true;
     this.dirLight.shadow.mapSize.width = 2048;
     this.dirLight.shadow.mapSize.height = 2048;
@@ -124,10 +135,21 @@ class F1PortfolioApp {
     this.dirLight.shadow.camera.bottom = -150;
     this.scene.add(this.dirLight);
 
-    this.showroomSpotlight = new THREE.SpotLight(0xFFFFFF, 3.5, 35, Math.PI / 3.5, 0.4);
-    this.showroomSpotlight.position.set(-1, 7, 5);
+    // Showroom Overhead High-Intensity Key Spotlight
+    this.showroomSpotlight = new THREE.SpotLight(0xFFFFFF, 5.0, 30, Math.PI / 3, 0.3, 1.0);
+    this.showroomSpotlight.position.set(0, 7.5, 2.0);
     this.showroomSpotlight.castShadow = true;
     this.scene.add(this.showroomSpotlight);
+
+    // Showroom Front 3/4 Fill Light
+    this.showroomFillLight = new THREE.DirectionalLight(0xFFFFFF, 1.8);
+    this.showroomFillLight.position.set(5, 4, 8);
+    this.scene.add(this.showroomFillLight);
+
+    // Showroom Rear Rim Light (Highlights rear wing & diffuser)
+    this.showroomRimLight = new THREE.DirectionalLight(0x64C4FF, 2.0);
+    this.showroomRimLight.position.set(-6, 3, -6);
+    this.scene.add(this.showroomRimLight);
   }
 
   buildWorld() {
@@ -137,12 +159,18 @@ class F1PortfolioApp {
     // 2. Build 20-Car Grid Manager
     this.gridManager = new GridManager(this.scene, this.monzaTrack);
 
-    // 3. Build Player 3D F1 Car
+    // 3. Build Showroom Podium Turntable (Elevated circular platform with LED Neon ring)
+    this.buildShowroomPodium();
+
+    // 4. Build Player 3D F1 Car
     this.f1Car = new F1Car(this.selectedTeam);
     this.scene.add(this.f1Car.group);
     this.f1Car.group.position.set(0, 0, 0);
 
-    // 4. Build 3D Drivers for Page 2 (Driver Selection)
+    // Set spotlight target directly to car
+    this.showroomSpotlight.target = this.f1Car.group;
+
+    // 5. Build 3D Drivers for Page 2 (Driver Selection)
     const d1 = this.selectedTeam.drivers[0];
     const d2 = this.selectedTeam.drivers[1];
 
@@ -157,6 +185,49 @@ class F1PortfolioApp {
     this.driver2Char.group.rotation.y = -0.25;
     this.driver2Char.group.visible = false; // Hidden on Page 1
     this.scene.add(this.driver2Char.group);
+  }
+
+  buildShowroomPodium() {
+    this.showroomPodium = new THREE.Group();
+
+    // Cylindrical Turntable Base
+    const baseGeo = new THREE.CylinderGeometry(4.2, 4.5, 0.25, 48);
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x141824,
+      roughness: 0.3,
+      metalness: 0.8
+    });
+    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+    baseMesh.position.y = -0.125;
+    baseMesh.receiveShadow = true;
+    this.showroomPodium.add(baseMesh);
+
+    // Carbon fiber top plate
+    const topGeo = new THREE.CylinderGeometry(4.0, 4.0, 0.04, 48);
+    const topMat = new THREE.MeshStandardMaterial({
+      color: 0x0E1118,
+      roughness: 0.2,
+      metalness: 0.9
+    });
+    const topMesh = new THREE.Mesh(topGeo, topMat);
+    topMesh.position.y = 0.01;
+    topMesh.receiveShadow = true;
+    this.showroomPodium.add(topMesh);
+
+    // Glowing LED Neon Edge Ring
+    const ringGeo = new THREE.TorusGeometry(4.05, 0.04, 16, 64);
+    ringGeo.rotateX(Math.PI / 2);
+    this.podiumRingMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(this.selectedTeam.color),
+      emissive: new THREE.Color(this.selectedTeam.color),
+      emissiveIntensity: 3.5,
+      roughness: 0.1
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, this.podiumRingMaterial);
+    ringMesh.position.y = 0.02;
+    this.showroomPodium.add(ringMesh);
+
+    this.scene.add(this.showroomPodium);
   }
 
   setupUI() {
@@ -198,23 +269,32 @@ class F1PortfolioApp {
     this.selectedDriver = driver || team.drivers[0];
     this.lobbyPage = pageNum;
 
-    // Update car livery
-    this.f1Car.updateTeam(team);
-    this.paddockHUD.updateTeam(team);
-
-    // Update showroom spotlight color
-    if (this.showroomSpotlight) {
-      this.showroomSpotlight.color.set(team.color);
+    // 1. Update 3D Car Livery & Finishes
+    if (this.f1Car) {
+      this.f1Car.updateTeam(team);
+    }
+    if (this.paddockHUD) {
+      this.paddockHUD.updateTeam(team);
     }
 
-    // Update 3D drivers appearance
+    // 2. Update Showroom Lights & Glowing Podium Ring
+    if (this.showroomSpotlight) {
+      this.showroomSpotlight.color.set(0xFFFFFF);
+    }
+    if (this.podiumRingMaterial) {
+      this.podiumRingMaterial.color.set(team.color);
+      this.podiumRingMaterial.emissive.set(team.color);
+      this.podiumRingMaterial.needsUpdate = true;
+    }
+
+    // 3. Update 3D Drivers
     const d1 = team.drivers[0];
     const d2 = team.drivers[1];
     if (this.driver1Char) this.driver1Char.updateTeamAndDriver(d1, team);
     if (this.driver2Char) this.driver2Char.updateTeamAndDriver(d2, team);
 
-    // Visibility based on Page 1 (Team Select) vs Page 2 (Driver Select)
-    const isDriverPage = (pageNum === 2);
+    // Page 1 vs Page 2 Visibility
+    const isDriverPage = (pageNum === 2 && this.gameState === 'lobby');
     if (this.driver1Char) this.driver1Char.group.visible = isDriverPage;
     if (this.driver2Char) this.driver2Char.group.visible = isDriverPage;
 
@@ -258,9 +338,10 @@ class F1PortfolioApp {
     this.selectedDriver = driver;
     this.gameState = 'racing';
 
-    // Hide showroom 3D drivers during race
+    // Hide showroom elements during race
     if (this.driver1Char) this.driver1Char.group.visible = false;
     if (this.driver2Char) this.driver2Char.group.visible = false;
+    if (this.showroomPodium) this.showroomPodium.visible = false;
 
     // 1. Build the full 20-car starting grid on Monza!
     const playerSlotIndex = 2; // P3 Grid Box
@@ -319,11 +400,14 @@ class F1PortfolioApp {
     this.paddockHUD.hide();
     this.gridManager.clearGrid();
 
+    if (this.showroomPodium) this.showroomPodium.visible = true;
+
     this.lobbyUI.show();
     this.cameraController.setMode('showroom');
     this.physics.resetPosition(0, 0, 0, 0);
     this.f1Car.group.position.set(0, 0, 0);
     this.f1Car.group.rotation.set(0, 0, 0);
+    this.onTeamChange(this.selectedTeam, this.selectedDriver, 1);
   }
 
   resetCarToTrack() {
@@ -366,7 +450,7 @@ class F1PortfolioApp {
       if (e.code === 'Space') this.keys.boost = false;
     });
 
-    // Touch controls
+    // Mobile touch controls
     const bindTouch = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -382,8 +466,10 @@ class F1PortfolioApp {
     bindTouch('touch-right', () => this.keys.right = true, () => this.keys.right = false);
     bindTouch('touch-drs', () => this.keys.boost = true, () => this.keys.boost = false);
 
-    // Click on 3D objects
+    // Click on 3D Objects
     window.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'CANVAS') return;
+
       this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);

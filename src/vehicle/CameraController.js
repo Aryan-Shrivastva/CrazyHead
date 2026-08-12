@@ -12,12 +12,12 @@ export class CameraController {
     // Camera Modes: 'cockpit', 'tcam', 'chase', 'showroom', 'paddock'
     this.mode = 'showroom';
     this.modesList = ['cockpit', 'tcam', 'chase'];
-    this.modeIndex = 0; // Starts in cockpit when racing
+    this.modeIndex = 0;
 
-    // Showroom Front 3/4 Camera (Matching Reference Photo)
+    // Showroom Camera Settings
     this.orbitRadius = 4.8;
-    this.orbitAngle = Math.PI * 0.08; // Front 3/4 angle
-    this.orbitHeight = 0.95;
+    this.orbitAngle = 0.45; // Heroic 3/4 angle
+    this.orbitHeight = 1.1;
     this.isDragging = false;
     this.previousMousePosition = { x: 0, y: 0 };
 
@@ -31,6 +31,8 @@ export class CameraController {
   setupOrbitListeners() {
     const onPointerDown = (e) => {
       if (this.mode !== 'showroom') return;
+      // Only drag if clicking on canvas
+      if (e.target.tagName !== 'CANVAS') return;
       this.isDragging = true;
       this.previousMousePosition = { x: e.clientX, y: e.clientY };
     };
@@ -40,8 +42,8 @@ export class CameraController {
       const deltaX = e.clientX - this.previousMousePosition.x;
       const deltaY = e.clientY - this.previousMousePosition.y;
 
-      this.orbitAngle -= deltaX * 0.008;
-      this.orbitHeight = Math.max(0.4, Math.min(2.5, this.orbitHeight + deltaY * 0.008));
+      this.orbitAngle -= deltaX * 0.006;
+      this.orbitHeight = Math.max(0.4, Math.min(2.5, this.orbitHeight + deltaY * 0.006));
       this.previousMousePosition = { x: e.clientX, y: e.clientY };
     };
 
@@ -72,17 +74,18 @@ export class CameraController {
 
     if (this.mode === 'showroom') {
       if (!this.isDragging) {
-        // Gentle subtle breathing motion around front 3/4
-        const t = Date.now() * 0.0006;
-        const x = Math.sin(this.orbitAngle + Math.sin(t) * 0.1) * this.orbitRadius;
-        const z = Math.cos(this.orbitAngle + Math.sin(t) * 0.1) * this.orbitRadius;
-        this.camera.position.set(x, this.orbitHeight + Math.cos(t) * 0.04, z);
+        // Slow gentle studio orbit
+        const t = Date.now() * 0.0004;
+        const currentAngle = this.orbitAngle + Math.sin(t) * 0.05;
+        const x = Math.sin(currentAngle) * this.orbitRadius;
+        const z = Math.cos(currentAngle) * this.orbitRadius;
+        this.camera.position.set(x, this.orbitHeight, z);
       } else {
         const x = Math.sin(this.orbitAngle) * this.orbitRadius;
         const z = Math.cos(this.orbitAngle) * this.orbitRadius;
         this.camera.position.set(x, this.orbitHeight, z);
       }
-      this.camera.lookAt(0, 0.35, 0.4);
+      this.camera.lookAt(0, 0.45, 0.2);
       this.camera.fov = 42;
       this.camera.updateProjectionMatrix();
       return;
@@ -95,7 +98,7 @@ export class CameraController {
     if (this.mode === 'cockpit') {
       // 1. COCKPIT / HALO VIEW (MATCHING USER REFERENCE PHOTO)
       const forward = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
-      const eyeOffset = new THREE.Vector3(0, 0.72, 0.15); // Behind Halo & steering wheel
+      const eyeOffset = new THREE.Vector3(0, 0.72, 0.15);
       eyeOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), heading);
 
       const targetPos = carPos.clone().add(eyeOffset);
@@ -156,7 +159,6 @@ export class CameraController {
   }
 
   transitionToCockpit(carPos, heading, callback) {
-    const forward = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
     const eyeOffset = new THREE.Vector3(0, 0.72, 0.15);
     eyeOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), heading);
     const targetPos = carPos.clone().add(eyeOffset);
