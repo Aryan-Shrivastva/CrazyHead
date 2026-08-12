@@ -2,7 +2,7 @@ import confetti from 'canvas-confetti';
 import { F1_TEAMS } from '../data/teams.js';
 
 /**
- * Lobby UI Controller: Team & Driver Selection with 5 Red Lights Sequence
+ * Official F1 Career Mode Team Selection Lobby (Matching Reference Image)
  */
 export class LobbyUI {
   constructor(onStartRace, onTeamChange, soundManager) {
@@ -10,115 +10,162 @@ export class LobbyUI {
     this.onTeamChange = onTeamChange;
     this.soundManager = soundManager;
 
-    this.selectedTeam = F1_TEAMS[0]; // Default: Ferrari
-    this.selectedDriver = this.selectedTeam.drivers[0]; // Default: Charles Leclerc
+    this.selectedTeam = F1_TEAMS[0]; // Default Ferrari
+    this.selectedDriver = this.selectedTeam.drivers[0]; // Default Leclerc
 
     this.screenElement = document.getElementById('lobby-screen');
-    this.teamListEl = document.getElementById('team-list');
-    this.driverListEl = document.getElementById('driver-list');
+    this.ribbonEl = document.getElementById('team-carbon-ribbon');
+    this.teamTitleEl = document.getElementById('lobby-team-title');
+    this.driverCompCardEl = document.getElementById('driver-comparison-card');
+    this.perksListEl = document.getElementById('lobby-perks-list');
     this.startBtn = document.getElementById('start-race-btn');
-    this.lightsGantry = document.getElementById('f1-lights-gantry');
+    this.ambientWaves = document.getElementById('showroom-ambient-waves');
 
-    this.specTeamBadge = document.getElementById('spec-team-badge');
-    this.specTeamName = document.getElementById('spec-team-name');
-    this.specEngine = document.getElementById('spec-engine');
-    this.specPower = document.getElementById('spec-power');
-    this.showroomGlow = document.getElementById('showroom-glow');
+    // Metadata Elements
+    this.metaPrincipal = document.getElementById('meta-principal');
+    this.metaChassis = document.getElementById('meta-chassis');
+    this.metaBase = document.getElementById('meta-base');
+    this.metaEngine = document.getElementById('meta-engine');
 
     this.init();
   }
 
   init() {
-    this.renderTeams();
-    this.renderDrivers();
-    this.updateSpecBanner();
+    this.renderTeamRibbon();
+    this.updateTeamDetails();
     this.setupListeners();
   }
 
-  renderTeams() {
-    this.teamListEl.innerHTML = '';
-    F1_TEAMS.forEach(team => {
-      const card = document.createElement('div');
-      card.className = `team-card-item ${team.id === this.selectedTeam.id ? 'selected' : ''}`;
-      card.style.setProperty('--team-color', team.color);
-      card.style.setProperty('--team-glow', `${team.color}44`);
+  renderTeamRibbon() {
+    if (!this.ribbonEl) return;
+    this.ribbonEl.innerHTML = '';
 
-      card.innerHTML = `
-        <span class="team-item-badge">${team.badge}</span>
-        <div class="team-item-info">
-          <span class="team-item-name">${team.shortName}</span>
-          <span class="team-item-country">${team.country}</span>
-        </div>
+    F1_TEAMS.forEach(team => {
+      const tile = document.createElement('div');
+      tile.className = `carbon-team-tile ${team.id === this.selectedTeam.id ? 'selected' : ''}`;
+      tile.style.setProperty('--team-color', team.color);
+      tile.style.setProperty('--team-glow', `${team.color}66`);
+
+      tile.innerHTML = `
+        <span class="tile-badge-icon">${team.badge}</span>
+        <span class="tile-team-short">${team.logoText || team.shortName}</span>
       `;
 
-      card.addEventListener('click', () => {
+      tile.addEventListener('click', () => {
         this.selectTeam(team);
       });
 
-      this.teamListEl.appendChild(card);
+      this.ribbonEl.appendChild(tile);
     });
   }
 
   selectTeam(team) {
     this.selectedTeam = team;
     this.selectedDriver = team.drivers[0];
-    this.renderTeams();
-    this.renderDrivers();
-    this.updateSpecBanner();
+
+    this.renderTeamRibbon();
+    this.updateTeamDetails();
 
     if (this.onTeamChange) {
       this.onTeamChange(this.selectedTeam);
     }
   }
 
-  renderDrivers() {
-    this.driverListEl.innerHTML = '';
-    this.selectedTeam.drivers.forEach(driver => {
-      const card = document.createElement('div');
-      card.className = `driver-card-item ${driver.id === this.selectedDriver.id ? 'selected' : ''}`;
+  updateTeamDetails() {
+    // 1. Update Title & Meta
+    if (this.teamTitleEl) this.teamTitleEl.textContent = this.selectedTeam.name.toUpperCase();
+    if (this.metaPrincipal) this.metaPrincipal.textContent = this.selectedTeam.teamPrincipal;
+    if (this.metaChassis) this.metaChassis.textContent = this.selectedTeam.chassis;
+    if (this.metaBase) this.metaBase.textContent = this.selectedTeam.base;
+    if (this.metaEngine) this.metaEngine.textContent = this.selectedTeam.engineSupplier;
 
-      card.innerHTML = `
-        <div class="driver-info-main">
-          <span class="driver-flag">${driver.flag}</span>
-          <div>
-            <div class="driver-name">${driver.name}</div>
-            <div class="driver-stats-meta">${driver.wins} Wins • ${driver.podiums} Podiums</div>
+    // 2. Ambient Wave Color
+    if (this.ambientWaves) {
+      this.ambientWaves.style.setProperty('--ambient-wave-color', `${this.selectedTeam.color}44`);
+    }
+
+    // 3. Driver Comparison Split Card (Matching Reference Photo)
+    if (this.driverCompCardEl) {
+      const d1 = this.selectedTeam.drivers[0];
+      const d2 = this.selectedTeam.drivers[1];
+
+      this.driverCompCardEl.innerHTML = `
+        <div class="driver-split-row">
+          <!-- Driver 1 -->
+          <div class="driver-side ${this.selectedDriver.id === d1.id ? 'selected' : ''}" id="driver-side-1">
+            <div class="driver-name-tag">${d1.name} <span class="driver-percent">${d1.share || '50%'}</span></div>
+            <div class="driver-badges-strip">
+              <span class="f1-stat-badge">${d1.rtg || 90} RTG</span>
+              <span class="f1-stat-badge">${d1.foc || 90} FOC</span>
+            </div>
+          </div>
+
+          <!-- Inc. Bonus Pill -->
+          <div class="f1-stat-badge" style="background: rgba(175, 82, 222, 0.3); color: #DDA0DD; border: 1px solid rgba(175,82,222,0.4);">
+            Inc. 2% Bonus
+          </div>
+
+          <!-- Driver 2 -->
+          <div class="driver-side ${this.selectedDriver.id === d2.id ? 'selected' : ''}" id="driver-side-2" style="text-align: right; align-items: flex-end;">
+            <div class="driver-name-tag"><span class="driver-percent">${d2.share || '50%'}</span> ${d2.name}</div>
+            <div class="driver-badges-strip">
+              <span class="f1-stat-badge">${d2.foc || 90} FOC</span>
+              <span class="f1-stat-badge">${d2.rtg || 90} RTG</span>
+            </div>
           </div>
         </div>
-        <div class="driver-number">${driver.number}</div>
+
+        <!-- Split Progress Bar -->
+        <div class="driver-split-bar" style="--team-color: ${this.selectedTeam.color}">
+          <div class="split-fill-left" style="width: ${d1.share || '50%'}"></div>
+          <div class="split-fill-right" style="width: ${d2.share || '50%'}"></div>
+        </div>
       `;
 
-      card.addEventListener('click', () => {
-        this.selectedDriver = driver;
-        this.renderDrivers();
+      // Add click listeners to switch active driver
+      const side1 = document.getElementById('driver-side-1');
+      const side2 = document.getElementById('driver-side-2');
+      if (side1) {
+        side1.addEventListener('click', () => {
+          this.selectedDriver = d1;
+          this.updateTeamDetails();
+        });
+      }
+      if (side2) {
+        side2.addEventListener('click', () => {
+          this.selectedDriver = d2;
+          this.updateTeamDetails();
+        });
+      }
+    }
+
+    // 4. Perks Table (Matching Photo)
+    if (this.perksListEl) {
+      this.perksListEl.innerHTML = '';
+      (this.selectedTeam.perks || []).forEach(perk => {
+        const row = document.createElement('div');
+        row.className = 'perk-row';
+        row.innerHTML = `
+          <span class="perk-name">${perk.name}</span>
+          <span class="perk-val-pill ${perk.active ? '' : 'inactive'}">${perk.val}</span>
+        `;
+        this.perksListEl.appendChild(row);
       });
-
-      this.driverListEl.appendChild(card);
-    });
-  }
-
-  updateSpecBanner() {
-    this.specTeamBadge.textContent = this.selectedTeam.badge;
-    this.specTeamName.textContent = this.selectedTeam.name.toUpperCase();
-    this.specEngine.textContent = this.selectedTeam.engine;
-    this.specPower.textContent = this.selectedTeam.power;
-
-    if (this.showroomGlow) {
-      this.showroomGlow.style.background = `radial-gradient(circle, ${this.selectedTeam.color}33 0%, transparent 70%)`;
     }
   }
 
   setupListeners() {
-    this.startBtn.addEventListener('click', () => {
-      this.triggerLightsOutSequence();
-    });
+    if (this.startBtn) {
+      this.startBtn.addEventListener('click', () => {
+        this.triggerLightsOutSequence();
+      });
+    }
   }
 
   triggerLightsOutSequence() {
     this.startBtn.disabled = true;
     this.startBtn.style.opacity = '0.5';
 
-    // 5 Red Lights Sequence Countdown
     const lights = [
       document.getElementById('light-1'),
       document.getElementById('light-2'),
@@ -137,35 +184,32 @@ export class LobbyUI {
         count++;
       } else {
         clearInterval(interval);
-        // Random pause between 0.8s and 2.0s for authentic F1 start
         const randomDelay = 800 + Math.random() * 800;
         setTimeout(() => {
-          // LIGHTS OUT!
           lights.forEach(l => l && l.classList.remove('on'));
           if (this.soundManager) this.soundManager.playGantryLightBeep(true);
 
-          // Confetti celebration
           confetti({
-            particleCount: 100,
-            spread: 80,
+            particleCount: 120,
+            spread: 90,
             origin: { y: 0.6 }
           });
 
-          // Transition to Race
           setTimeout(() => {
             this.hide();
             if (this.onStartRace) {
               this.onStartRace(this.selectedTeam, this.selectedDriver);
             }
-          }, 300);
+          }, 350);
         }, randomDelay);
       }
-    }, 700);
+    }, 650);
   }
 
   show() {
     this.screenElement.classList.remove('hidden');
     this.screenElement.classList.add('active');
+    if (this.ambientWaves) this.ambientWaves.style.display = 'block';
     this.startBtn.disabled = false;
     this.startBtn.style.opacity = '1';
   }
@@ -173,5 +217,6 @@ export class LobbyUI {
   hide() {
     this.screenElement.classList.remove('active');
     this.screenElement.classList.add('hidden');
+    if (this.ambientWaves) this.ambientWaves.style.display = 'none';
   }
 }

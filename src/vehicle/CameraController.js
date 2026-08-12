@@ -14,10 +14,10 @@ export class CameraController {
     this.modesList = ['cockpit', 'tcam', 'chase'];
     this.modeIndex = 0; // Starts in cockpit when racing
 
-    // Showroom Orbit State
-    this.orbitRadius = 5.2;
-    this.orbitAngle = Math.PI / 4;
-    this.orbitHeight = 1.6;
+    // Showroom Front 3/4 Camera (Matching Reference Photo)
+    this.orbitRadius = 4.8;
+    this.orbitAngle = Math.PI * 0.08; // Front 3/4 angle
+    this.orbitHeight = 0.95;
     this.isDragging = false;
     this.previousMousePosition = { x: 0, y: 0 };
 
@@ -41,7 +41,7 @@ export class CameraController {
       const deltaY = e.clientY - this.previousMousePosition.y;
 
       this.orbitAngle -= deltaX * 0.008;
-      this.orbitHeight = Math.max(0.6, Math.min(3.0, this.orbitHeight + deltaY * 0.008));
+      this.orbitHeight = Math.max(0.4, Math.min(2.5, this.orbitHeight + deltaY * 0.008));
       this.previousMousePosition = { x: e.clientX, y: e.clientY };
     };
 
@@ -72,13 +72,18 @@ export class CameraController {
 
     if (this.mode === 'showroom') {
       if (!this.isDragging) {
-        this.orbitAngle += dt * 0.25; // Gentle auto-rotate
+        // Gentle subtle breathing motion around front 3/4
+        const t = Date.now() * 0.0006;
+        const x = Math.sin(this.orbitAngle + Math.sin(t) * 0.1) * this.orbitRadius;
+        const z = Math.cos(this.orbitAngle + Math.sin(t) * 0.1) * this.orbitRadius;
+        this.camera.position.set(x, this.orbitHeight + Math.cos(t) * 0.04, z);
+      } else {
+        const x = Math.sin(this.orbitAngle) * this.orbitRadius;
+        const z = Math.cos(this.orbitAngle) * this.orbitRadius;
+        this.camera.position.set(x, this.orbitHeight, z);
       }
-      const x = Math.sin(this.orbitAngle) * this.orbitRadius;
-      const z = Math.cos(this.orbitAngle) * this.orbitRadius;
-      this.camera.position.set(x, this.orbitHeight, z);
-      this.camera.lookAt(0, 0.4, 0);
-      this.camera.fov = 45;
+      this.camera.lookAt(0, 0.35, 0.4);
+      this.camera.fov = 42;
       this.camera.updateProjectionMatrix();
       return;
     }

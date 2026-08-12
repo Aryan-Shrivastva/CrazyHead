@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Formula 1 Portfolio Experience | Monza Grand Prix</title>
+  <title>Formula 1 Grand Prix Portfolio | Monza Experience</title>
   <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team and driver, race at Monza, and enter the Paddock engineering workstation." />
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="/src/style.css" />
 </head>
@@ -17,96 +17,83 @@
   <!-- 3D Canvas -->
   <canvas id="webgl-canvas"></canvas>
 
+  <!-- Ambient Wave Backdrop for Showroom -->
+  <div id="showroom-ambient-waves" class="showroom-ambient-waves"></div>
+
   <!-- Sound Toggle -->
   <button id="sound-toggle" class="sound-btn" title="Toggle Sound">
     <span id="sound-icon">🔊</span>
     <span id="sound-text">AUDIO ON</span>
   </button>
 
-  <!-- ================= LOBBY: TEAM & DRIVER SELECT ================= -->
-  <div id="lobby-screen" class="screen-overlay active">
-    <!-- Header -->
-    <header class="lobby-header">
-      <div class="f1-badge-container">
-        <span class="f1-logo">F1<span class="f1-dot">®</span></span>
-        <div class="f1-title-group">
-          <h1>GRAND PRIX PORTFOLIO</h1>
-          <p>AUTODROMO NAZIONALE MONZA • 60 LAPS</p>
+  <!-- ================= LOBBY: F1 OFFICIAL CAREER TEAM SELECT (MATCHING REFERENCE) ================= -->
+  <div id="lobby-screen" class="screen-overlay active f1-career-lobby">
+    <!-- Top-Left: Team Title & Factory Metadata -->
+    <div class="team-header-panel">
+      <div class="team-select-pill">TEAM SELECT</div>
+      <h1 class="team-main-title" id="lobby-team-title">SCUDERIA FERRARI HP</h1>
+      <div class="team-meta-row" id="lobby-team-meta">
+        <div class="meta-item">
+          <span class="meta-label">Team Principal</span>
+          <span class="meta-val" id="meta-principal">FRÉDÉRIC VASSEUR</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Chassis</span>
+          <span class="meta-val" id="meta-chassis">SF-25</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Base</span>
+          <span class="meta-val" id="meta-base">MARANELLO, ITALY</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Engine Supplier</span>
+          <span class="meta-val" id="meta-engine">FERRARI</span>
         </div>
       </div>
-      <div class="season-badge">2025/2026 SEASON</div>
-    </header>
+    </div>
 
-    <!-- Main Selection Stage -->
-    <main class="lobby-main">
-      <!-- Left: Team Selector Carousel -->
-      <aside class="team-sidebar">
-        <h3 class="section-label">SELECT CONSTRUCTOR</h3>
-        <div id="team-list" class="team-scroll-list">
-          <!-- Populated by JS -->
-        </div>
-      </aside>
-
-      <!-- Center: 3D Car Showroom Overlay Info -->
-      <section class="showroom-center">
-        <div class="showroom-backdrop-glow" id="showroom-glow"></div>
-        <div class="car-spec-banner" id="car-spec-banner">
-          <div class="spec-team-badge" id="spec-team-badge">🐎</div>
-          <div class="spec-details">
-            <h2 id="spec-team-name">SCUDERIA FERRARI HP</h2>
-            <div class="spec-stats">
-              <span id="spec-engine">Ferrari 066/12 1.6L V6 Turbo</span>
-              <span class="divider">•</span>
-              <span id="spec-power">1020+ BHP</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="view-controls-hint">
-          <span>🖱️ Click & Drag to Rotate Car</span>
-        </div>
-      </section>
-
-      <!-- Right: Driver Selector & Grid Launch -->
-      <aside class="driver-sidebar">
-        <h3 class="section-label">SELECT DRIVER</h3>
-        <div id="driver-list" class="driver-cards-container">
-          <!-- Populated by JS -->
-        </div>
-
-        <!-- Start Grid Button & 5 Red Lights -->
-        <div class="launch-card">
-          <div class="f1-lights-gantry" id="f1-lights-gantry">
-            <div class="gantry-light" id="light-1"></div>
-            <div class="gantry-light" id="light-2"></div>
-            <div class="gantry-light" id="light-3"></div>
-            <div class="gantry-light" id="light-4"></div>
-            <div class="gantry-light" id="light-5"></div>
-          </div>
-          
-          <button id="start-race-btn" class="start-race-btn">
-            <span class="btn-shine"></span>
-            <span class="btn-content">
-              <span class="btn-flag">🏁</span>
-              <span class="btn-text">ENTER MONZA GRID</span>
-            </span>
-          </button>
-          <div class="launch-hint">Lights Out & Away We Go!</div>
-        </div>
-      </aside>
-    </main>
-
-    <!-- Footer Controls Bar -->
-    <footer class="lobby-footer">
-      <div class="controls-guide">
-        <span class="key-tag">W / ↑</span> Accelerate
-        <span class="key-tag">S / ↓</span> Brake / Reverse
-        <span class="key-tag">A D / ← →</span> Steer
-        <span class="key-tag">SPACE</span> DRS / ERS Boost
-        <span class="key-tag">C</span> Camera View
-        <span class="key-tag">P / TAB</span> Paddock HQ
+    <!-- Top-Right: Driver Comparison & R&D Perks Panel -->
+    <div class="team-intel-panel">
+      <!-- Drivers Comparison Bar -->
+      <div class="driver-comparison-card" id="driver-comparison-card">
+        <!-- Injected via JS -->
       </div>
-    </footer>
+
+      <!-- Team R&D Perks Table -->
+      <div class="team-perks-card">
+        <div class="perks-header">
+          <span class="col-perk">Perk</span>
+          <span class="col-rec">Recognition</span>
+        </div>
+        <div class="perks-list" id="lobby-perks-list">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls & Ribbon -->
+    <div class="lobby-bottom-bar">
+      <!-- Horizontal Team Selector Carbon Ribbon (Matching Game) -->
+      <div class="team-carbon-ribbon" id="team-carbon-ribbon">
+        <!-- Populated via JS -->
+      </div>
+
+      <!-- Action Prompt / Launch Grid -->
+      <div class="lobby-action-group">
+        <div class="f1-lights-gantry mini" id="f1-lights-gantry">
+          <div class="gantry-light" id="light-1"></div>
+          <div class="gantry-light" id="light-2"></div>
+          <div class="gantry-light" id="light-3"></div>
+          <div class="gantry-light" id="light-4"></div>
+          <div class="gantry-light" id="light-5"></div>
+        </div>
+
+        <button id="start-race-btn" class="f1-continue-btn">
+          <span class="btn-controller-glyph">Ⓕ</span>
+          <span class="btn-continue-text">CONTINUE TO MONZA GRID ➔</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ================= IN-GAME COCKPIT & RACE HUD ================= -->
@@ -236,7 +223,7 @@
       </div>
     </div>
 
-    <!-- On-screen Mobile Controls (for touch devices) -->
+    <!-- On-screen Mobile Controls -->
     <div id="mobile-controls" class="mobile-touch-controls">
       <div class="dpad-left">
         <button id="touch-left" class="touch-btn">◀</button>
@@ -405,7 +392,6 @@
             </div>
 
             <div class="projects-list-grid">
-              <!-- Project 1 -->
               <div class="project-card">
                 <div class="project-badge">3D WebGL / Simulation</div>
                 <h4>F1 Monza Grand Prix 3D Experience</h4>
@@ -422,7 +408,6 @@
                 </div>
               </div>
 
-              <!-- Project 2 -->
               <div class="project-card">
                 <div class="project-badge">Full Stack / Distributed</div>
                 <h4>High-Performance Real-Time Engine</h4>
@@ -439,7 +424,6 @@
                 </div>
               </div>
 
-              <!-- Project 3 -->
               <div class="project-card">
                 <div class="project-badge">AI / Computer Vision</div>
                 <h4>Neural Vision & Telemetry Classifier</h4>
@@ -456,7 +440,6 @@
                 </div>
               </div>
 
-              <!-- Project 4 -->
               <div class="project-card">
                 <div class="project-badge">Systems & Architecture</div>
                 <h4>Cloud Infrastructure Orchestrator</h4>
