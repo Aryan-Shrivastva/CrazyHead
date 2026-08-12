@@ -134,7 +134,7 @@
       </div>
       <div class="tower-lap-info">
         <span class="lap-label">LAP</span>
-        <span class="lap-value" id="hud-lap-counter">1 <span class="lap-total">/ 60</span></span>
+        <span class="lap-value" id="hud-lap-counter">1 <span class="lap-total">/ 5</span></span>
       </div>
       <div class="tower-drivers" id="hud-leaderboard-list"></div>
     </div>
@@ -289,6 +289,38 @@
       <div class="pitstop-actions">
         <button id="cancel-pitstop-btn" class="pit-btn cancel">ABORT BOX</button>
         <button id="confirm-pitstop-btn" class="pit-btn execute">EXECUTE 2.4s PIT STOP ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RACE FINISH / CHEQUERED FLAG MODAL ================= -->
+  <div id="race-finish-modal" class="screen-overlay hidden race-finish-overlay">
+    <div class="race-finish-card">
+      <div class="chequered-banner">🏁 CHEQUERED FLAG • 5/5 LAPS COMPLETED 🏁</div>
+      
+      <div class="finish-hero">
+        <div class="finish-position" id="finish-pos-text">P1</div>
+        <div class="finish-title" id="finish-title-text">MONZA GRAND PRIX WINNER!</div>
+      </div>
+
+      <div class="finish-stats-grid">
+        <div class="finish-stat-box">
+          <span class="fstat-label">TOTAL RACE TIME</span>
+          <span class="fstat-val" id="finish-total-time">6:45.210</span>
+        </div>
+        <div class="finish-stat-box">
+          <span class="fstat-label">FASTEST LAP</span>
+          <span class="fstat-val purple" id="finish-fastest-lap">1:21.046</span>
+        </div>
+        <div class="finish-stat-box">
+          <span class="fstat-label">COMPLETED LAPS</span>
+          <span class="fstat-val">5 / 5 LAPS</span>
+        </div>
+      </div>
+
+      <div class="finish-actions">
+        <button id="finish-paddock-btn" class="finish-btn highlight">ENTER ARYAN'S PADDOCK ➔</button>
+        <button id="finish-restart-btn" class="finish-btn">RACE AGAIN / LOBBY</button>
       </div>
     </div>
   </div>

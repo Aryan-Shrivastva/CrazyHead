@@ -1,11 +1,13 @@
 import * as THREE from 'three';
+import confetti from 'canvas-confetti';
 
 /**
  * Cockpit & Race Telemetry HUD Controller
  * Features:
- * 1. Dynamic Live 20-Driver Leaderboard (Overtaking updates standings in real time)
- * 2. 3-Lap Timing Stack (Current Lap running clock, Last Lap time, Best Lap record)
- * 3. Exact Monza Minimap (Auto-fitted bounds with zero clipping + all rival car blips)
+ * 1. 5 Total Laps with Chequered Flag Race Completion & Podium Modal
+ * 2. Dynamic Live 20-Driver Leaderboard (Real-time overtaking rankings)
+ * 3. 3-Lap Timing Stack (Current Lap live clock, Last Lap time, Best Lap record)
+ * 4. Exact Monza Minimap (Auto-fitted bounds with zero clipping + all rival car blips)
  */
 export class TelemetryHUD {
   constructor(callbacks) {
@@ -28,6 +30,15 @@ export class TelemetryHUD {
     this.bestLapTimeEl = document.getElementById('hud-best-lap-time');
     this.leaderboardListEl = document.getElementById('hud-leaderboard-list');
 
+    // Finish Modal Elements
+    this.finishModal = document.getElementById('race-finish-modal');
+    this.finishPosText = document.getElementById('finish-pos-text');
+    this.finishTitleText = document.getElementById('finish-title-text');
+    this.finishTotalTime = document.getElementById('finish-total-time');
+    this.finishFastestLap = document.getElementById('finish-fastest-lap');
+    this.finishPaddockBtn = document.getElementById('finish-paddock-btn');
+    this.finishRestartBtn = document.getElementById('finish-restart-btn');
+
     // Minimap
     this.minimapCanvas = document.getElementById('minimap-canvas');
     this.minimapCtx = this.minimapCanvas ? this.minimapCanvas.getContext('2d') : null;
@@ -44,13 +55,16 @@ export class TelemetryHUD {
     this.playerTeam = null;
     this.playerDriver = null;
     this.currentLap = 1;
-    this.maxLaps = 60;
+    this.maxLaps = 5; // 5 Total Laps
+    this.raceStartTime = 0;
     this.lapStartTime = 0;
     this.lastLapTime = null; // Stored in seconds
     this.bestLapTime = 81.046; // Monza record ~1:21.046
 
     this.prevPlayerProgress = 0.05;
     this.playerLapsCompleted = 0;
+    this.isRaceFinished = false;
+    this.playerFinishingRank = 1;
 
     // Cached Monza Track Bounds for Minimap Auto-fit
     this.mapBounds = null;
@@ -85,6 +99,20 @@ export class TelemetryHUD {
         if (this.callbacks.onReturnLobby) this.callbacks.onReturnLobby();
       });
     }
+
+    if (this.finishPaddockBtn) {
+      this.finishPaddockBtn.addEventListener('click', () => {
+        if (this.finishModal) this.finishModal.classList.add('hidden');
+        if (this.callbacks.onOpenPaddock) this.callbacks.onOpenPaddock();
+      });
+    }
+
+    if (this.finishRestartBtn) {
+      this.finishRestartBtn.addEventListener('click', () => {
+        if (this.finishModal) this.finishModal.classList.add('hidden');
+        if (this.callbacks.onReturnLobby) this.callbacks.onReturnLobby();
+      });
+    }
   }
 
   initRace(team, driver) {
@@ -92,12 +120,17 @@ export class TelemetryHUD {
     this.playerDriver = driver;
     this.currentLap = 1;
     this.playerLapsCompleted = 0;
+    this.raceStartTime = Date.now();
     this.lapStartTime = Date.now();
     this.lastLapTime = null;
     this.prevPlayerProgress = 0.05;
+    this.isRaceFinished = false;
+    this.playerFinishingRank = 1;
 
+    if (this.finishModal) this.finishModal.classList.add('hidden');
     if (this.lastLapTimeEl) this.lastLapTimeEl.textContent = '--:--.---';
     if (this.bestLapTimeEl) this.bestLapTimeEl.textContent = this.formatTime(this.bestLapTime);
+    if (this.lapCounterEl) this.lapCounterEl.innerHTML = `1 <span class="lap-total">/ ${this.maxLaps}</span>`;
   }
 
   formatTime(seconds) {
@@ -146,10 +179,9 @@ export class TelemetryHUD {
       playerU = nearest.u || 0.05;
     }
 
-    // Detect lap completion (Crossing from u > 0.92 to u < 0.08)
+    // Detect lap completion (Crossing from u > 0.90 to u < 0.10)
     if (this.prevPlayerProgress > 0.90 && playerU < 0.10) {
       this.playerLapsCompleted++;
-      this.currentLap = this.playerLapsCompleted + 1;
 
       const elapsedLapSeconds = (Date.now() - this.lapStartTime) / 1000;
       this.lastLapTime = elapsedLapSeconds;
@@ -164,21 +196,27 @@ export class TelemetryHUD {
       if (this.lastLapTimeEl) this.lastLapTimeEl.textContent = this.formatTime(this.lastLapTime);
       if (this.bestLapTimeEl) this.bestLapTimeEl.textContent = this.formatTime(this.bestLapTime);
 
-      this.lapStartTime = Date.now();
+      // CHECK IF 5 LAPS ARE COMPLETED -> TRIGGER RACE FINISH
+      if (this.playerLapsCompleted >= this.maxLaps && !this.isRaceFinished) {
+        this.triggerRaceFinish();
+      } else {
+        this.currentLap = Math.min(this.playerLapsCompleted + 1, this.maxLaps);
+        this.lapStartTime = Date.now();
+      }
     }
     this.prevPlayerProgress = playerU;
 
     // Live Current Lap Timer
-    if (this.lapStartTime > 0) {
+    if (this.lapStartTime > 0 && !this.isRaceFinished) {
       const liveElapsed = (Date.now() - this.lapStartTime) / 1000;
       if (this.currentLapTimeEl) {
         this.currentLapTimeEl.textContent = this.formatTime(liveElapsed);
       }
     }
 
-    // Lap Counter
+    // Lap Counter (Always capped at 5)
     if (this.lapCounterEl) {
-      this.lapCounterEl.innerHTML = `${this.currentLap} <span class="lap-total">/ ${this.maxLaps}</span>`;
+      this.lapCounterEl.innerHTML = `${Math.min(this.currentLap, this.maxLaps)} <span class="lap-total">/ ${this.maxLaps}</span>`;
     }
 
     // Update Live 20-Car Dynamic Standings
@@ -186,6 +224,33 @@ export class TelemetryHUD {
 
     // Render Full Monza Minimap
     this.renderMinimap(physics.position, monzaTrack, gridManager);
+  }
+
+  triggerRaceFinish() {
+    this.isRaceFinished = true;
+    const totalRaceTimeSecs = (Date.now() - this.raceStartTime) / 1000;
+
+    const rankStr = `P${this.playerFinishingRank}`;
+    if (this.finishPosText) this.finishPosText.textContent = rankStr;
+    if (this.finishTitleText) {
+      this.finishTitleText.textContent = this.playerFinishingRank === 1 
+        ? '🏆 MONZA GRAND PRIX WINNER!' 
+        : `🏁 MONZA GP FINISH: ${rankStr}`;
+    }
+    if (this.finishTotalTime) this.finishTotalTime.textContent = this.formatTime(totalRaceTimeSecs);
+    if (this.finishFastestLap) this.finishFastestLap.textContent = this.formatTime(this.bestLapTime);
+
+    if (this.finishModal) {
+      this.finishModal.classList.remove('hidden');
+    }
+
+    this.showRadioMessage(`"CHEQUERED FLAG! That's the race, ${rankStr}! What a drive!"`, 6000);
+
+    confetti({
+      particleCount: 180,
+      spread: 100,
+      origin: { y: 0.5 }
+    });
   }
 
   updateDynamicStandings(playerU, gridManager) {
@@ -222,6 +287,10 @@ export class TelemetryHUD {
 
     // Sort descending (highest score = 1st place)
     racers.sort((a, b) => b.score - a.score);
+
+    // Update player rank
+    const playerIndex = racers.findIndex(r => r.isPlayer);
+    this.playerFinishingRank = (playerIndex >= 0) ? playerIndex + 1 : 1;
 
     // Leader score for gap calculation
     const leaderScore = racers[0].score;
@@ -373,5 +442,6 @@ export class TelemetryHUD {
   hide() {
     this.screenElement.classList.remove('active');
     this.screenElement.classList.add('hidden');
+    if (this.finishModal) this.finishModal.classList.add('hidden');
   }
 }
