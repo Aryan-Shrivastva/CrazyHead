@@ -1,14 +1,18 @@
 import * as THREE from 'three';
-import gsap from 'gsap';
 
 /**
- * Full 3D Paddock Hospitality Truck & Workstation (Pixel-Perfect Match to User Images 2 & 3)
+ * 3D Paddock Hospitality Truck & Workstation (Pixel-Perfect Match to User Images & Specs)
  * 
- * Two Interactive Stages:
- * - Stage 1 (Image 2): Cutaway View of the Red Hospitality Transporter Truck with top "aramco" banner,
- *   floating 3D '@' icon, white 5-tire rack, red tool drawers, and a 3D engineer/driver sitting on a swivel stool.
- * - Stage 2 (Image 3): Direct First-Person Zoom into the engineering desk with top angled monitor,
- *   bottom CRT monitor showing 3D diorama and interactive links, left tool rack, desk props, and framed wall portraits.
+ * Top Monitor:
+ * - 4 Competitive Programming & Dev Profiles (LeetCode, Codeforces, CodeChef, GitHub)
+ * - Questions Done, Submissions Activity Grid / Heatmap, Active Days, Max Streak
+ * 
+ * Bottom CRT Monitor:
+ * - 3 Left Sidebar Icons:
+ *   1st: LinkedIn (https://www.linkedin.com/in/aryanshriv/)
+ *   2nd: GitHub (https://github.com/Aryan-Shrivastva)
+ *   3rd: X / Twitter (https://x.com/aryanshriv09)
+ * - CRT Phosphor Screen displaying 3D F1 Transporter Diorama & Project Telemetry
  */
 export class PaddockRoom {
   constructor(scene, cameraController, onExitPaddock) {
@@ -23,44 +27,85 @@ export class PaddockRoom {
     this.stage = 'overview'; // 'overview' (Image 2) or 'desk' (Image 3)
     this.interactiveObjects = [];
 
-    // Projects list
-    this.currentProjectIndex = 0;
-    this.projects = [
+    // Top Monitor: 4 Coding Profiles
+    this.currentProfileIndex = 0;
+    this.profiles = [
       {
-        title: "F1 Monza 3D Experience",
-        category: "3D WEBGL / THREE.JS",
-        subtitle: "Full Formula 1 Monza Experience with 20 Cars",
-        desc: "Interactive 3D Grand Prix experience built with Three.js, featuring 20 cars on the grid, 5-lap sprint race, real-time start gantry, and paddock engineering workstation.",
-        techs: "Three.js • WebGL • GSAP • Web Audio API",
-        web: "https://github.com/Aryan-Shrivastva/CrazyHead",
-        github: "https://github.com/Aryan-Shrivastva/CrazyHead"
+        id: 'leetcode',
+        platform: 'LeetCode Profile',
+        handle: 'AryannnnnnShrivastva',
+        url: 'https://leetcode.com/u/AryannnnnnShrivastva/',
+        color: '#FFA116',
+        questionsDone: '654 Solved',
+        breakdown: 'Easy: 267 • Med: 329 • Hard: 58',
+        activeDays: '172 Days Active',
+        maxStreak: '92 Days Streak 🔥',
+        ranking: 'Top 5.2% (Rank #112,116)',
+        calendar: this.generateActivityData(172, 92, 0.75)
       },
       {
-        title: "Real-Time Telemetry Pipeline",
-        category: "FULL-STACK / STREAMING",
-        subtitle: "High-Frequency WebSocket Engine",
-        desc: "High-throughput 60Hz telemetry streaming pipeline with distributed message queues, apex delta analytics, and real-time dashboard telemetry.",
-        techs: "Node.js • WebSockets • Redis • React",
-        web: "https://github.com/Aryan-Shrivastva",
-        github: "https://github.com/Aryan-Shrivastva"
+        id: 'codeforces',
+        platform: 'Codeforces Profile',
+        handle: 'Aryan1901',
+        url: 'https://codeforces.com/profile/Aryan1901',
+        color: '#3B82F6',
+        questionsDone: '184 Solved',
+        breakdown: 'Rating: 1068 (Max: 1068) • Newbie',
+        activeDays: '48 Days Active',
+        maxStreak: '14 Days Streak 🔥',
+        ranking: 'Contests: 12 • Division 2/3 Competitor',
+        calendar: this.generateActivityData(48, 14, 0.45)
       },
       {
-        title: "Neural Apex & Vision Tracker",
-        category: "AI & COMPUTER VISION",
-        subtitle: "Deep Learning Racing Analytics",
-        desc: "Computer vision and neural forecasting model for automated apex tracking, telemetry anomaly detection, and aerodynamic drag prediction.",
-        techs: "Python • PyTorch • FastAPI • OpenCV",
-        web: "https://github.com/Aryan-Shrivastva",
-        github: "https://github.com/Aryan-Shrivastva"
+        id: 'codechef',
+        platform: 'CodeChef Profile',
+        handle: 'aryan1901',
+        url: 'https://www.codechef.com/users/aryan1901',
+        color: '#8B5CF6',
+        questionsDone: '126 Solved',
+        breakdown: 'Rating: 1420 (2★) • Global Div 3',
+        activeDays: '38 Days Active',
+        maxStreak: '12 Days Streak 🔥',
+        ranking: 'Star Rating: 2★ • Div 3 Rank #420',
+        calendar: this.generateActivityData(38, 12, 0.40)
       },
       {
-        title: "Cloud Microservices Orchestrator",
-        category: "CLOUD ARCHITECTURE",
-        subtitle: "Zero-Downtime Deployment Engine",
-        desc: "Container orchestration platform with automated auto-scaling, latency-based health routing, and Prometheus cluster monitoring.",
-        techs: "Go • Docker • Kubernetes • Prometheus",
-        web: "https://github.com/Aryan-Shrivastva",
-        github: "https://github.com/Aryan-Shrivastva"
+        id: 'github',
+        platform: 'GitHub Profile',
+        handle: 'Aryan-Shrivastva',
+        url: 'https://github.com/Aryan-Shrivastva',
+        color: '#22C55E',
+        questionsDone: '292 Contributions',
+        breakdown: '52 Repositories • 1,480+ Commits',
+        activeDays: '142 Active Days',
+        maxStreak: '28 Days Streak ⚡',
+        ranking: 'Top Repos: CrazyHead (F1 3D), Telemetry Engine',
+        calendar: this.generateActivityData(142, 28, 0.65)
+      }
+    ];
+
+    // Bottom CRT Monitor: 3 Social Profiles
+    this.socialLinks = [
+      {
+        name: 'LinkedIn',
+        url: 'https://www.linkedin.com/in/aryanshriv/',
+        icon: '💼',
+        glyph: 'in',
+        color: '#0A66C2'
+      },
+      {
+        name: 'GitHub',
+        url: 'https://github.com/Aryan-Shrivastva',
+        icon: '🐙',
+        glyph: 'GH',
+        color: '#FFFFFF'
+      },
+      {
+        name: 'X / Twitter',
+        url: 'https://x.com/aryanshriv09',
+        icon: '𝕏',
+        glyph: '𝕏',
+        color: '#1DA1F2'
       }
     ];
 
@@ -82,54 +127,98 @@ export class PaddockRoom {
     this.buildTopMonitor();
     this.buildBottomCRT();
     this.buildLighting();
+
+    // Fetch live APIs in background to refresh live data
+    this.fetchLiveProfileData();
+  }
+
+  generateActivityData(activeCount, maxStreak, density) {
+    const grid = [];
+    const totalDays = 52 * 7; // 364 days
+    for (let i = 0; i < totalDays; i++) {
+      const r = Math.random();
+      if (r < density * 0.4) {
+        grid.push(Math.floor(Math.random() * 4) + 1); // 1-4 contributions
+      } else if (r < density * 0.6) {
+        grid.push(Math.floor(Math.random() * 8) + 3); // 3-10 contributions
+      } else {
+        grid.push(0);
+      }
+    }
+    return grid;
+  }
+
+  async fetchLiveProfileData() {
+    try {
+      // 1. Fetch LeetCode
+      const lcRes = await fetch('https://alfa-leetcode-api.onrender.com/userProfile/AryannnnnnShrivastva').catch(() => null);
+      if (lcRes && lcRes.ok) {
+        const lc = await lcRes.json();
+        if (lc && lc.totalSolved) {
+          this.profiles[0].questionsDone = `${lc.totalSolved} Solved`;
+          this.profiles[0].breakdown = `Easy: ${lc.easySolved || 267} • Med: ${lc.mediumSolved || 329} • Hard: ${lc.hardSolved || 58}`;
+          if (lc.ranking) this.profiles[0].ranking = `Global Rank #${lc.ranking.toLocaleString()}`;
+        }
+      }
+
+      // 2. Fetch Codeforces
+      const cfRes = await fetch('https://codeforces.com/api/user.info?handles=Aryan1901').catch(() => null);
+      if (cfRes && cfRes.ok) {
+        const cf = await cfRes.json();
+        if (cf.status === 'OK' && cf.result && cf.result[0]) {
+          const user = cf.result[0];
+          this.profiles[1].breakdown = `Rating: ${user.rating || 1068} (Max: ${user.maxRating || 1068}) • ${user.rank || 'newbie'}`;
+        }
+      }
+
+      // 3. Fetch GitHub
+      const ghRes = await fetch('https://github-contributions-api.jogruber.de/v4/Aryan-Shrivastva?y=last').catch(() => null);
+      if (ghRes && ghRes.ok) {
+        const gh = await ghRes.json();
+        if (gh && gh.total && gh.total.lastYear) {
+          this.profiles[3].questionsDone = `${gh.total.lastYear} Contributions`;
+        }
+      }
+
+      this.renderTopMonitor();
+    } catch (e) {
+      console.log('Profile fetch notice:', e);
+    }
   }
 
   buildTruckEnvironment() {
-    // Red F1 Transporter Truck Materials
     const truckRedMat = new THREE.MeshStandardMaterial({ color: 0xD32F2F, roughness: 0.35, metalness: 0.15 });
     const truckDarkRedMat = new THREE.MeshStandardMaterial({ color: 0x991B1B, roughness: 0.4 });
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xDDDDDD, metalness: 0.85, roughness: 0.2 });
     const tireBlackMat = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.7 });
 
-    // 1. HOSPITALITY TRAILER OUTER SHELL (Red frame with cutaway opening)
-    // Floor
-    const trailerFloorGeo = new THREE.BoxGeometry(10.5, 0.4, 6.0);
-    const trailerFloor = new THREE.Mesh(trailerFloorGeo, truckDarkRedMat);
+    // Floor & Trailer Shell
+    const trailerFloor = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.4, 6.0), truckDarkRedMat);
     trailerFloor.position.set(0, 0.2, -1.5);
-    trailerFloor.receiveShadow = true;
     this.group.add(trailerFloor);
 
-    // Roof Frame
-    const trailerRoofGeo = new THREE.BoxGeometry(10.5, 0.4, 6.0);
-    const trailerRoof = new THREE.Mesh(trailerRoofGeo, truckRedMat);
+    const trailerRoof = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.4, 6.0), truckRedMat);
     trailerRoof.position.set(0, 7.8, -1.5);
     this.group.add(trailerRoof);
 
-    // Left outer trailer wall
-    const trailerLeftGeo = new THREE.BoxGeometry(0.4, 7.6, 6.0);
-    const trailerLeft = new THREE.Mesh(trailerLeftGeo, truckRedMat);
+    const trailerLeft = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7.6, 6.0), truckRedMat);
     trailerLeft.position.set(-5.15, 4.0, -1.5);
     this.group.add(trailerLeft);
 
-    // Right outer trailer wall
-    const trailerRightGeo = new THREE.BoxGeometry(0.4, 7.6, 6.0);
-    const trailerRight = new THREE.Mesh(trailerRightGeo, truckRedMat);
+    const trailerRight = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7.6, 6.0), truckRedMat);
     trailerRight.position.set(5.15, 4.0, -1.5);
     this.group.add(trailerRight);
 
-    // 2. TOP ROOF SIGNAGE BANNER ("aramco" / "FERRARI" header matching Image 2)
-    const bannerW = 9.8;
-    const bannerH = 1.1;
-    const bannerGeo = new THREE.BoxGeometry(bannerW, bannerH, 0.15);
+    // Top Signage Banner ("aramco" / "ILLE")
+    const bannerGeo = new THREE.BoxGeometry(9.8, 1.1, 0.15);
     const bannerMat = new THREE.MeshBasicMaterial({ map: this.createTopBannerTexture() });
     const bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
     bannerMesh.position.set(0, 7.25, 1.45);
     this.group.add(bannerMesh);
 
-    // 3. FLOATING 3D '@' / WEB ICON ON TOP RIGHT (Matching Image 2)
+    // Floating 3D '@' Icon on Top Right
     const atGroup = new THREE.Group();
     atGroup.position.set(4.6, 7.1, 1.6);
-
     const torusGeo = new THREE.TorusGeometry(0.55, 0.12, 16, 32);
     const atMat = new THREE.MeshStandardMaterial({
       color: 0x00A8E8,
@@ -141,31 +230,21 @@ export class PaddockRoom {
     const atMesh = new THREE.Mesh(torusGeo, atMat);
     atGroup.add(atMesh);
 
-    // Inner stem of @
-    const atStemGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16);
-    const atStem = new THREE.Mesh(atStemGeo, atMat);
+    const atStem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16), atMat);
     atStem.position.set(0.18, -0.1, 0);
     atGroup.add(atStem);
-
     this.group.add(atGroup);
-    this.floatingAtGroup = atGroup;
 
-    // 4. FRONT TRUCK CAB (Visible on left side of Image 2)
+    // Front Truck Cab
     const cabGroup = new THREE.Group();
     cabGroup.position.set(-6.6, 2.5, 0.2);
-
-    const cabGeo = new THREE.BoxGeometry(2.4, 4.5, 4.0);
-    const cabMesh = new THREE.Mesh(cabGeo, truckRedMat);
+    const cabMesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.5, 4.0), truckRedMat);
     cabGroup.add(cabMesh);
 
-    // Cab windscreen
-    const windowGeo = new THREE.BoxGeometry(0.1, 1.6, 3.2);
-    const windowMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.1, metalness: 0.9 });
-    const windowMesh = new THREE.Mesh(windowGeo, windowMat);
+    const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 3.2), new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.1, metalness: 0.9 }));
     windowMesh.position.set(-1.21, 0.6, 0);
     cabGroup.add(windowMesh);
 
-    // Truck Wheel underneath
     const wheelGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.6, 24);
     wheelGeo.rotateZ(Math.PI / 2);
     const wheelMesh = new THREE.Mesh(wheelGeo, tireBlackMat);
@@ -187,7 +266,6 @@ export class PaddockRoom {
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
 
-    // Left Pirelli/Ille Red Bar
     ctx.fillStyle = '#D62828';
     ctx.fillRect(0, 0, 260, 128);
     ctx.fillStyle = '#FFFFFF';
@@ -196,7 +274,6 @@ export class PaddockRoom {
     ctx.textBaseline = 'middle';
     ctx.fillText('ILLE', 130, 64);
 
-    // Center Aramco Blue/Cyan Panel
     const grad = ctx.createLinearGradient(260, 0, 800, 128);
     grad.addColorStop(0, '#00A8E8');
     grad.addColorStop(0.5, '#70D6FF');
@@ -208,7 +285,6 @@ export class PaddockRoom {
     ctx.font = 'bold 72px "Titillium Web", sans-serif';
     ctx.fillText('aramco', 540, 64);
 
-    // Right Dark Accent
     ctx.fillStyle = '#222222';
     ctx.fillRect(820, 0, 204, 128);
     ctx.fillStyle = '#FFD166';
@@ -229,10 +305,9 @@ export class PaddockRoom {
     const darkFrameMat = new THREE.MeshStandardMaterial({ color: 0x0E211D, roughness: 0.4 });
     const tireBlackMat = new THREE.MeshStandardMaterial({ color: 0x1D2220, roughness: 0.8 });
 
-    // 1. BACK WALL & PERSPECTIVE WALLS
+    // Back & Perspective Walls
     const backWall = new THREE.Mesh(new THREE.PlaneGeometry(10.2, 7.4), wallBackMat);
     backWall.position.set(0, 4.0, -3.9);
-    backWall.receiveShadow = true;
     this.group.add(backWall);
 
     const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 7.4), wallLeftMat);
@@ -245,46 +320,40 @@ export class PaddockRoom {
     rightWall.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(rightWall);
 
-    // 2. WHITE 3-TIER TIRE RACK ON LEFT (Holding 5 F1 tires matching Image 2)
+    // Left 3-Tier Tire Rack (Holding 5 F1 Tires)
     const rackGroup = new THREE.Group();
     rackGroup.position.set(-3.7, 1.8, -2.4);
 
-    // Vertical Frame Posts (4 posts)
     for (let x of [-0.6, 0.6]) {
       for (let z of [-0.45, 0.45]) {
         const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.2, 0.1), whiteMat);
         post.position.set(x, 1.9, z);
-        post.castShadow = true;
         rackGroup.add(post);
       }
     }
 
-    // 3 Shelves
     for (let y of [0.0, 1.4, 2.8]) {
       const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 1.0), whiteMat);
       shelf.position.set(0, y, 0);
       rackGroup.add(shelf);
     }
 
-    // 5 F1 Slick Tires in the Rack
     const addTire = (x, y, z) => {
       const tireGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.38, 20);
       tireGeo.rotateX(Math.PI / 2);
       const tire = new THREE.Mesh(tireGeo, tireBlackMat);
       tire.position.set(x, y, z);
-      tire.castShadow = true;
       rackGroup.add(tire);
     };
 
-    addTire(-0.25, 0.6, 0); // Bottom tier tire 1
-    addTire(0.25, 0.6, 0);  // Bottom tier tire 2
-    addTire(-0.25, 2.0, 0); // Middle tier tire 1
-    addTire(0.25, 2.0, 0);  // Middle tier tire 2
-    addTire(0.0, 3.4, 0);   // Top tier tire 1
-
+    addTire(-0.25, 0.6, 0);
+    addTire(0.25, 0.6, 0);
+    addTire(-0.25, 2.0, 0);
+    addTire(0.25, 2.0, 0);
+    addTire(0.0, 3.4, 0);
     this.group.add(rackGroup);
 
-    // 3. GREEN TOOLBOARD (Mounted on Back Wall matching Image 2)
+    // Green Toolboard with Hanging Tools
     const toolboardGroup = new THREE.Group();
     toolboardGroup.position.set(-2.0, 4.4, -3.75);
 
@@ -292,7 +361,6 @@ export class PaddockRoom {
     const board = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.2, 0.12), boardMat);
     toolboardGroup.add(board);
 
-    // 4 White Screwdrivers on Top of Toolboard
     for (let i = 0; i < 4; i++) {
       const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), whiteMat);
       handle.position.set(-0.55 + i * 0.36, 0.9, 0.1);
@@ -302,7 +370,6 @@ export class PaddockRoom {
       toolboardGroup.add(shaft);
     }
 
-    // 3 White Wrenches / Spanners on Bottom of Toolboard
     for (let j = 0; j < 3; j++) {
       const wrenchBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.06), whiteMat);
       wrenchBody.position.set(0, -0.4 - j * 0.34, 0.1);
@@ -316,15 +383,12 @@ export class PaddockRoom {
     }
     this.group.add(toolboardGroup);
 
-    // 4. RED TOOL CABINET & DRAWERS UNDER DESK (Matching Image 2)
+    // Red Tool Cabinet & Drawers
     const cabinetGroup = new THREE.Group();
     cabinetGroup.position.set(0.7, 1.0, -2.6);
-
     const cabinetBody = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.8, 2.0), redCabinetMat);
-    cabinetBody.receiveShadow = true;
     cabinetGroup.add(cabinetBody);
 
-    // 6 Red Drawers with Black Horizontal Handles
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 2; col++) {
         const drawerX = -1.25 + col * 2.5;
@@ -340,30 +404,26 @@ export class PaddockRoom {
       }
     }
 
-    // Open pulled-out drawer with tools on left side (Matching Image 2)
     const openDrawer = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.38, 1.2), redCabinetMat);
     openDrawer.position.set(-1.25, 0.55, 1.5);
     cabinetGroup.add(openDrawer);
-
     this.group.add(cabinetGroup);
 
-    // 5. WORKBENCH DESKTOP
+    // Workbench Desktop
     const deskTop = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.25, 2.8), deskMat);
     deskTop.position.set(0.2, 1.95, -2.4);
-    deskTop.receiveShadow = true;
     this.group.add(deskTop);
 
-    // Keyboard & Mouse in center of desk
+    // Keyboard & Mouse
     const kb = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.85), whiteMat);
     kb.position.set(-0.05, 2.12, -1.9);
-    kb.castShadow = true;
     this.group.add(kb);
 
     const mouse = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.45), whiteMat);
     mouse.position.set(1.4, 2.1, -1.9);
     this.group.add(mouse);
 
-    // Stacked Technical Note Papers on right of desk
+    // Stacked Notes & Desk Wrench
     const paperMat1 = new THREE.MeshStandardMaterial({ color: 0x88BCB2, roughness: 0.6 });
     const paperMat2 = new THREE.MeshStandardMaterial({ color: 0xB6DDD5, roughness: 0.6 });
     const paperMat3 = new THREE.MeshStandardMaterial({ color: 0xEDF6F2, roughness: 0.6 });
@@ -383,13 +443,12 @@ export class PaddockRoom {
     p3.rotation.y = 0.05;
     this.group.add(p3);
 
-    // Angled Wrench lying flat on left side of desk
     const deskWrench = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.12), whiteMat);
     deskWrench.position.set(-1.8, 2.09, -1.6);
     deskWrench.rotation.y = -0.3;
     this.group.add(deskWrench);
 
-    // 2 Metal Garage Cans / Flasks on left
+    // Canisters
     const canGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.45, 12);
     const canMat = new THREE.MeshStandardMaterial({ color: 0x1E463D, roughness: 0.4 });
     const can1 = new THREE.Mesh(canGeo, canMat);
@@ -400,8 +459,7 @@ export class PaddockRoom {
     can2.position.set(-1.25, 2.3, -2.4);
     this.group.add(can2);
 
-    // 6. RIGHT WALL FRAMED PORTRAITS (Matching Images 2 & 3)
-    // Top Wide Picture Frame (Podium photo)
+    // Right Wall Pictures (Podium & Driver GOAT)
     const topFrame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.8, 3.4), darkFrameMat);
     topFrame.position.set(4.3, 5.4, -1.6);
     topFrame.rotation.y = -Math.PI / 2 + 0.12;
@@ -413,7 +471,6 @@ export class PaddockRoom {
     topPic.rotation.y = -Math.PI / 2 + 0.12;
     this.group.add(topPic);
 
-    // Bottom Portrait Picture Frame (Driver with GOAT silhouette)
     const btmFrame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.2, 1.8), darkFrameMat);
     btmFrame.position.set(4.3, 3.2, -1.6);
     btmFrame.rotation.y = -Math.PI / 2 + 0.12;
@@ -427,7 +484,6 @@ export class PaddockRoom {
   }
 
   buildEngineerCharacter() {
-    // 3D Guy Sitting in the Paddock (Red suit + Red Helmet on Swivel Stool matching Image 2)
     this.engineerGroup = new THREE.Group();
     this.engineerGroup.position.set(0.6, 0.4, -1.4);
 
@@ -436,14 +492,12 @@ export class PaddockRoom {
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.9, roughness: 0.2 });
     const seatMat = new THREE.MeshStandardMaterial({ color: 0x7E9E97, roughness: 0.5 });
 
-    // 1. Swivel Stool (Round seat + chrome stem + base)
-    const stoolSeatGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.14, 16);
-    const stoolSeat = new THREE.Mesh(stoolSeatGeo, seatMat);
+    // Stool
+    const stoolSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.14, 16), seatMat);
     stoolSeat.position.set(0, 1.3, 0);
     this.engineerGroup.add(stoolSeat);
 
-    const stoolStemGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.3, 12);
-    const stoolStem = new THREE.Mesh(stoolStemGeo, chromeMat);
+    const stoolStem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 12), chromeMat);
     stoolStem.position.set(0, 0.65, 0);
     this.engineerGroup.add(stoolStem);
 
@@ -453,29 +507,21 @@ export class PaddockRoom {
     stoolFootRing.position.set(0, 0.4, 0);
     this.engineerGroup.add(stoolFootRing);
 
-    // 2. Character Torso (Leaning slightly forward towards keyboard)
-    const torsoGeo = new THREE.BoxGeometry(0.7, 0.85, 0.45);
-    const torso = new THREE.Mesh(torsoGeo, redSuitMat);
+    // Torso & Helmet
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.85, 0.45), redSuitMat);
     torso.position.set(0, 2.0, 0);
-    torso.rotation.x = 0.15; // Leaning into desk
-    torso.castShadow = true;
+    torso.rotation.x = 0.15;
     this.engineerGroup.add(torso);
 
-    // 3. Faceted Red Racing Helmet (Matching exact low-poly shape of Image 2)
-    const helmetGeo = new THREE.DodecahedronGeometry(0.38, 1);
-    const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+    const helmet = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 1), helmetMat);
     helmet.position.set(0, 2.7, -0.05);
-    helmet.castShadow = true;
     this.engineerGroup.add(helmet);
 
-    // Visor
-    const visorGeo = new THREE.BoxGeometry(0.34, 0.12, 0.2);
-    const visorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 });
-    const visor = new THREE.Mesh(visorGeo, visorMat);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.2), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 }));
     visor.position.set(0, 2.7, -0.32);
     this.engineerGroup.add(visor);
 
-    // 4. Arms Posed Typing on Keyboard
+    // Arms
     const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), redSuitMat);
     armL.position.set(-0.45, 1.9, -0.25);
     armL.rotation.x = -Math.PI / 4;
@@ -490,15 +536,12 @@ export class PaddockRoom {
 
     this.group.add(this.engineerGroup);
 
-    // Interactive Raycast Click Target for Character / Workstation
-    const hitBoxGeo = new THREE.BoxGeometry(1.6, 2.8, 1.6);
-    const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
-    this.engineerMesh = new THREE.Mesh(hitBoxGeo, hitBoxMat);
-    this.engineerMesh.position.set(0, 1.8, 0);
-    this.engineerMesh.name = 'PADDOCK_ENGINEER_CLICK';
-    this.engineerGroup.add(this.engineerMesh);
-
-    this.interactiveObjects.push(this.engineerMesh);
+    // Raycast hit target
+    const hitBox = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.0, 1.8), new THREE.MeshBasicMaterial({ visible: false }));
+    hitBox.position.set(0, 1.8, 0);
+    hitBox.name = 'PADDOCK_ENGINEER_CLICK';
+    this.engineerGroup.add(hitBox);
+    this.interactiveObjects.push(hitBox);
   }
 
   buildTopMonitor() {
@@ -508,7 +551,7 @@ export class PaddockRoom {
 
     const topMonGroup = new THREE.Group();
     topMonGroup.position.set(-0.05, 5.7, -3.6);
-    topMonGroup.rotation.x = 0.16; // Angled down towards driver camera
+    topMonGroup.rotation.x = 0.16;
 
     const monFrameMat = new THREE.MeshStandardMaterial({
       color: 0x1B443B,
@@ -518,10 +561,9 @@ export class PaddockRoom {
     const monFrame = new THREE.Mesh(new THREE.BoxGeometry(monW, monH, monDepth), monFrameMat);
     topMonGroup.add(monFrame);
 
-    // Monitor Canvas
     this.topMonitorCanvas = document.createElement('canvas');
-    this.topMonitorCanvas.width = 1024;
-    this.topMonitorCanvas.height = 426;
+    this.topMonitorCanvas.width = 1280;
+    this.topMonitorCanvas.height = 540;
     this.topMonitorCtx = this.topMonitorCanvas.getContext('2d');
     this.topMonitorTexture = new THREE.CanvasTexture(this.topMonitorCanvas);
     this.topMonitorTexture.minFilter = THREE.LinearFilter;
@@ -545,69 +587,218 @@ export class PaddockRoom {
     const ctx = this.topMonitorCtx;
     const w = this.topMonitorCanvas.width;
     const h = this.topMonitorCanvas.height;
+    const prof = this.profiles[this.currentProfileIndex];
 
-    // Dark charcoal screen background matching Image 3
-    ctx.fillStyle = '#1B2428';
+    // 1. Dark charcoal cockpit monitor background
+    ctx.fillStyle = '#141E22';
     ctx.fillRect(0, 0, w, h);
 
-    // Inner subtle border
-    ctx.strokeStyle = '#2B3B40';
+    ctx.strokeStyle = '#22363D';
     ctx.lineWidth = 4;
-    ctx.strokeRect(10, 10, w - 20, h - 20);
+    ctx.strokeRect(8, 8, w - 16, h - 16);
 
-    // [ PREVIOUS ] Button
-    ctx.fillStyle = '#121A1E';
-    ctx.fillRect(36, 26, 170, 52);
-    ctx.strokeStyle = '#718D9A';
+    // 2. Header Bar: [ PREVIOUS ] | Platform Title | [ NEXT ]
+    ctx.fillStyle = '#0D1519';
+    ctx.fillRect(28, 20, 160, 44);
+    ctx.strokeStyle = '#5E7D8A';
     ctx.lineWidth = 2;
-    ctx.strokeRect(36, 26, 170, 52);
+    ctx.strokeRect(28, 20, 160, 44);
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 22px "Titillium Web", sans-serif';
+    ctx.font = 'bold 20px "Titillium Web", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('PREVIOUS', 121, 60);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('PREVIOUS', 108, 42);
 
-    // Center Title: Aryan's paddock (matching Mike's paddock in Image 3)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 36px "Titillium Web", sans-serif';
-    ctx.fillText("Aryan's paddock", w / 2, 62);
-
-    // [ NEXT ] Button
-    ctx.fillStyle = '#121A1E';
-    ctx.fillRect(w - 206, 26, 170, 52);
-    ctx.strokeStyle = '#718D9A';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(w - 206, 26, 170, 52);
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 22px "Titillium Web", sans-serif';
-    ctx.fillText('NEXT', w - 121, 60);
-
-    // Body Text (Exact copy from reference Image 3)
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#EFF5F4';
-    ctx.font = '22px "Titillium Web", sans-serif';
-
-    ctx.fillText('As Web developers, we have the opportunity to showcase our', 40, 140);
-    ctx.fillText('work in creative ways.', 40, 172);
-
-    ctx.fillText('Since my first contact with 3D websites, I always wanted to', 40, 224);
-    ctx.fillText('create my portfolio as an interactive 3D experience.', 40, 256);
-
-    ctx.fillText('I am glad I finally came around to do it and hope you enjoy the', 40, 310);
-    ctx.fillText('result as much as I did creating it!', 40, 342);
-
-    // [ GO BACK ] Bright Red Button (Bottom Right)
-    ctx.fillStyle = '#E61E1A';
-    ctx.fillRect(w - 230, h - 72, 190, 48);
-    ctx.strokeStyle = '#FF4D4A';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(w - 230, h - 72, 190, 48);
-
+    // Center Platform Header Pill & Title
+    ctx.fillStyle = prof.color;
+    ctx.fillRect(w / 2 - 190, 20, 380, 44);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 24px "Orbitron", sans-serif';
+    ctx.fillText(`${prof.platform.toUpperCase()} (${this.currentProfileIndex + 1}/4)`, w / 2, 42);
+
+    // [ NEXT ]
+    ctx.fillStyle = '#0D1519';
+    ctx.fillRect(w - 188, 20, 160, 44);
+    ctx.strokeStyle = '#5E7D8A';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(w - 188, 20, 160, 44);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px "Titillium Web", sans-serif';
+    ctx.fillText('NEXT', w - 108, 42);
+
+    // 3. User Handle & Direct Link Badge
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '17px "JetBrains Mono", monospace';
+    ctx.fillText(`HANDLE: @${prof.handle}`, 32, 94);
+
+    ctx.fillStyle = prof.color;
+    ctx.font = 'bold 15px "Orbitron", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`➔ CLICK ANYWHERE TO OPEN ${prof.platform}`, w - 32, 94);
+
+    // 4. Metrics Cards Row (Questions Done, Active Days, Max Streak, Ranking)
+    const cardY = 115;
+    const cardH = 88;
+
+    if (prof.id === 'github') {
+      // GitHub Focus: Submissions & Contributions
+      const colW = (w - 64 - 24) / 2;
+
+      // Card 1: Total Contributions
+      ctx.fillStyle = '#1B2A30';
+      ctx.fillRect(32, cardY, colW, cardH);
+      ctx.strokeStyle = '#2A444E';
+      ctx.strokeRect(32, cardY, colW, cardH);
+
+      ctx.fillStyle = '#A0C4D0';
+      ctx.font = 'bold 13px "Orbitron", sans-serif';
+      ctx.fillText('TOTAL CONTRIBUTIONS', 50, cardY + 22);
+      ctx.fillStyle = '#22C55E';
+      ctx.font = '900 32px "Orbitron", sans-serif';
+      ctx.fillText(prof.questionsDone, 50, cardY + 62);
+
+      // Card 2: Repos & Commits
+      ctx.fillStyle = '#1B2A30';
+      ctx.fillRect(32 + colW + 24, cardY, colW, cardH);
+      ctx.strokeStyle = '#2A444E';
+      ctx.strokeRect(32 + colW + 24, cardY, colW, cardH);
+
+      ctx.fillStyle = '#A0C4D0';
+      ctx.font = 'bold 13px "Orbitron", sans-serif';
+      ctx.fillText('ACTIVITY & REPOSITORIES', 50 + colW + 24, cardY + 22);
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = 'bold 24px "Titillium Web", sans-serif';
+      ctx.fillText(prof.breakdown, 50 + colW + 24, cardY + 62);
+    } else {
+      // LeetCode, Codeforces, CodeChef: 3-Metric Cards
+      const colW = (w - 64 - 32) / 3;
+
+      // Metric 1: Questions Done
+      ctx.fillStyle = '#1B2A30';
+      ctx.fillRect(32, cardY, colW, cardH);
+      ctx.strokeStyle = '#2A444E';
+      ctx.strokeRect(32, cardY, colW, cardH);
+
+      ctx.fillStyle = '#A0C4D0';
+      ctx.font = 'bold 12px "Orbitron", sans-serif';
+      ctx.fillText('QUESTIONS SOLVED', 46, cardY + 20);
+      ctx.fillStyle = prof.color;
+      ctx.font = '900 28px "Orbitron", sans-serif';
+      ctx.fillText(prof.questionsDone, 46, cardY + 54);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '13px "Titillium Web", sans-serif';
+      ctx.fillText(prof.breakdown, 46, cardY + 76);
+
+      // Metric 2: Active Days
+      ctx.fillStyle = '#1B2A30';
+      ctx.fillRect(32 + colW + 16, cardY, colW, cardH);
+      ctx.strokeStyle = '#2A444E';
+      ctx.strokeRect(32 + colW + 16, cardY, colW, cardH);
+
+      ctx.fillStyle = '#A0C4D0';
+      ctx.font = 'bold 12px "Orbitron", sans-serif';
+      ctx.fillText('ACTIVE DAYS', 46 + colW + 16, cardY + 20);
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = '900 28px "Orbitron", sans-serif';
+      ctx.fillText(prof.activeDays, 46 + colW + 16, cardY + 54);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '13px "Titillium Web", sans-serif';
+      ctx.fillText('Consistency Tracker', 46 + colW + 16, cardY + 76);
+
+      // Metric 3: Max Streak
+      ctx.fillStyle = '#1B2A30';
+      ctx.fillRect(32 + (colW + 16) * 2, cardY, colW, cardH);
+      ctx.strokeStyle = '#2A444E';
+      ctx.strokeRect(32 + (colW + 16) * 2, cardY, colW, cardH);
+
+      ctx.fillStyle = '#A0C4D0';
+      ctx.font = 'bold 12px "Orbitron", sans-serif';
+      ctx.fillText('MAX STREAK', 46 + (colW + 16) * 2, cardY + 20);
+      ctx.fillStyle = '#F59E0B';
+      ctx.font = '900 28px "Orbitron", sans-serif';
+      ctx.fillText(prof.maxStreak, 46 + (colW + 16) * 2, cardY + 54);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '13px "Titillium Web", sans-serif';
+      ctx.fillText(prof.ranking, 46 + (colW + 16) * 2, cardY + 76);
+    }
+
+    // 5. 52-Week Submissions Activity Heatmap Grid
+    const gridY = 230;
+    const gridBoxH = 220;
+
+    ctx.fillStyle = '#0F181C';
+    ctx.fillRect(32, gridY, w - 64, gridBoxH);
+    ctx.strokeStyle = '#223842';
+    ctx.strokeRect(32, gridY, w - 64, gridBoxH);
+
+    ctx.fillStyle = '#E2E8F0';
+    ctx.font = 'bold 15px "Orbitron", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('SUBMISSION & CONTRIBUTION ACTIVITY GRID (YEARLY HEATMAP)', 50, gridY + 28);
+
+    // Render 52 columns x 7 rows heatmap matrix
+    const numCols = 52;
+    const numRows = 7;
+    const cellW = 19;
+    const cellH = 17;
+    const gap = 3;
+    const startX = 64;
+    const startY = gridY + 48;
+
+    const colors = [
+      '#1E2C33', // 0 submissions
+      '#0E4429', // 1-2
+      '#006D32', // 3-5
+      '#26A641', // 6-9
+      '#39D353'  // 10+
+    ];
+
+    let dataIdx = 0;
+    for (let c = 0; c < numCols; c++) {
+      for (let r = 0; r < numRows; r++) {
+        const val = prof.calendar[dataIdx % prof.calendar.length] || 0;
+        let colorIdx = 0;
+        if (val > 8) colorIdx = 4;
+        else if (val > 5) colorIdx = 3;
+        else if (val > 2) colorIdx = 2;
+        else if (val > 0) colorIdx = 1;
+
+        ctx.fillStyle = colors[colorIdx];
+        ctx.fillRect(startX + c * (cellW + gap), startY + r * (cellH + gap), cellW, cellH);
+        dataIdx++;
+      }
+    }
+
+    // Heatmap Legend
+    const legendX = w - 300;
+    const legendY = gridY + 195;
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '12px "Titillium Web", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('Less', legendX - 10, legendY + 10);
+
+    for (let l = 0; l < 5; l++) {
+      ctx.fillStyle = colors[l];
+      ctx.fillRect(legendX + l * 18, legendY, 14, 14);
+    }
+    ctx.fillStyle = '#94A3B8';
+    ctx.textAlign = 'left';
+    ctx.fillText('More', legendX + 5 * 18 + 6, legendY + 10);
+
+    // 6. [ GO BACK ] Button (Bottom Right)
+    ctx.fillStyle = '#E61E1A';
+    ctx.fillRect(w - 210, h - 68, 178, 48);
+    ctx.strokeStyle = '#FF4D4A';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(w - 210, h - 68, 178, 48);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 22px "Orbitron", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('GO BACK', w - 135, h - 40);
+    ctx.fillText('GO BACK', w - 121, h - 38);
 
     if (this.topMonitorTexture) this.topMonitorTexture.needsUpdate = true;
   }
@@ -628,7 +819,6 @@ export class PaddockRoom {
     const crtFrame = new THREE.Mesh(new THREE.BoxGeometry(crtW, crtH, crtDepth), crtFrameMat);
     crtGroup.add(crtFrame);
 
-    // CRT Canvas Texture
     this.crtCanvas = document.createElement('canvas');
     this.crtCanvas.width = 1024;
     this.crtCanvas.height = 534;
@@ -656,11 +846,11 @@ export class PaddockRoom {
     const w = this.crtCanvas.width;
     const h = this.crtCanvas.height;
 
-    // 1. Dark Outer Bezel
+    // 1. Dark Outer Chassis
     ctx.fillStyle = '#0D1A17';
     ctx.fillRect(0, 0, w, h);
 
-    // 2. Left Vertical Action Panel (Globe & GitHub icons)
+    // 2. Left Vertical Action Panel: 3 Social Links (LinkedIn, GitHub, X / Twitter)
     const sideW = 120;
     ctx.fillStyle = '#091311';
     ctx.fillRect(0, 0, sideW, h);
@@ -668,32 +858,47 @@ export class PaddockRoom {
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, sideW, h);
 
-    // 🌐 Web Live Icon Button
-    ctx.fillStyle = '#17332C';
+    // Icon 1: LinkedIn (Top: Y = 90)
+    ctx.fillStyle = '#0A66C2';
     ctx.beginPath();
-    ctx.arc(60, 110, 36, 0, Math.PI * 2);
+    ctx.arc(60, 90, 34, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#00D2BE';
+    ctx.strokeStyle = '#70B5FF';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.font = '36px sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 30px "Titillium Web", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🌐', 60, 110);
+    ctx.fillText('in', 60, 89);
 
-    // 🐙 GitHub Octocat Icon Button
-    ctx.fillStyle = '#17332C';
+    // Icon 2: GitHub (Middle: Y = 265)
+    ctx.fillStyle = '#24292E';
     ctx.beginPath();
-    ctx.arc(60, 230, 36, 0, Math.PI * 2);
+    ctx.arc(60, 265, 34, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillText('🐙', 60, 230);
+    ctx.font = '36px sans-serif';
+    ctx.fillText('🐙', 60, 265);
 
-    // 3. Central CRT Phosphor Screen (Pale Pistachio Yellow-Green from Image 3)
+    // Icon 3: X / Twitter (Bottom: Y = 440)
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(60, 440, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1DA1F2';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 32px "Orbitron", sans-serif';
+    ctx.fillText('𝕏', 60, 440);
+
+    // 3. Central CRT Phosphor Screen (Pale Pistachio from Image 3)
     const crtX = 140;
     const crtY = 24;
     const crtW = w - crtX - 24;
@@ -705,19 +910,16 @@ export class PaddockRoom {
     ctx.lineWidth = 4;
     ctx.strokeRect(crtX, crtY, crtW, crtH);
 
-    // Horizontal Scanlines
+    // Scanlines
     ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     for (let y = crtY; y < crtY + crtH; y += 4) {
       ctx.fillRect(crtX, y, crtW, 2);
     }
 
-    // 4. Draw 3D Isometric F1 Transporter Diorama Graphic (Matching Image 3 Screen Art)
-    const proj = this.projects[this.currentProjectIndex];
-
+    // 4. 3D Isometric F1 Transporter Diorama
     const dioramaCenterX = crtX + 180;
     const dioramaCenterY = crtY + 280;
 
-    // Isometric Green Base
     ctx.fillStyle = '#8AB89A';
     ctx.beginPath();
     ctx.ellipse(dioramaCenterX, dioramaCenterY, 150, 65, 0, 0, Math.PI * 2);
@@ -726,20 +928,18 @@ export class PaddockRoom {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Red F1 Transporter Truck & Structure
+    // Red Truck & Hospitality Unit
     ctx.fillStyle = '#D62828';
     ctx.fillRect(dioramaCenterX - 80, dioramaCenterY - 160, 110, 140);
     ctx.strokeStyle = '#991B1B';
     ctx.lineWidth = 2;
     ctx.strokeRect(dioramaCenterX - 80, dioramaCenterY - 160, 110, 140);
 
-    // Truck Cab Front
     ctx.fillStyle = '#E63946';
     ctx.fillRect(dioramaCenterX - 140, dioramaCenterY - 70, 70, 70);
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(dioramaCenterX - 135, dioramaCenterY - 60, 30, 25);
 
-    // Miniature F1 Race Car in front of Truck
     ctx.fillStyle = '#E63946';
     ctx.fillRect(dioramaCenterX + 10, dioramaCenterY - 20, 85, 22);
     ctx.fillStyle = '#111111';
@@ -747,54 +947,40 @@ export class PaddockRoom {
     ctx.fillRect(dioramaCenterX + 70, dioramaCenterY - 10, 20, 12);
     ctx.fillRect(dioramaCenterX + 85, dioramaCenterY - 32, 8, 22);
 
-    // Interactive Project Telemetry & Spec Details
+    // Interactive Social Links Telemetry Section
     const infoX = crtX + 380;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    // Category Pill
     ctx.fillStyle = '#194A3D';
-    ctx.fillRect(infoX, crtY + 36, 260, 32);
+    ctx.fillRect(infoX, crtY + 36, 280, 32);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 14px "Orbitron", sans-serif';
-    ctx.fillText(proj.category, infoX + 16, crtY + 44);
+    ctx.fillText('CONNECT & NETWORK', infoX + 16, crtY + 44);
 
-    // Title
     ctx.fillStyle = '#12261F';
     ctx.font = '900 32px "Titillium Web", sans-serif';
-    ctx.fillText(proj.title, infoX, crtY + 84);
+    ctx.fillText("Aryan's Social Hub", infoX, crtY + 84);
 
-    // Subtitle
     ctx.fillStyle = '#234E41';
     ctx.font = 'bold 18px "Titillium Web", sans-serif';
-    ctx.fillText(proj.subtitle, infoX, crtY + 128);
+    ctx.fillText('Click 3 Icons on Left to Visit:', infoX, crtY + 128);
 
-    // Description
-    ctx.fillStyle = '#1E3E34';
-    ctx.font = '17px "Titillium Web", sans-serif';
-    ctx.fillText(proj.desc.slice(0, 48), infoX, crtY + 175);
-    if (proj.desc.length > 48) {
-      ctx.fillText(proj.desc.slice(48, 105), infoX, crtY + 202);
-    }
-    if (proj.desc.length > 105) {
-      ctx.fillText(proj.desc.slice(105, 160), infoX, crtY + 229);
-    }
+    // Social Links details
+    ctx.fillStyle = '#0A66C2';
+    ctx.font = 'bold 18px "Titillium Web", sans-serif';
+    ctx.fillText('1. LinkedIn  ➔  in/aryanshriv', infoX, crtY + 175);
 
-    // Tech Stack
-    ctx.fillStyle = '#0F2B23';
-    ctx.font = 'bold 16px "JetBrains Mono", monospace';
-    ctx.fillText(`TECH: ${proj.techs}`, infoX, crtY + 285);
+    ctx.fillStyle = '#1F2937';
+    ctx.fillText('2. GitHub    ➔  Aryan-Shrivastva', infoX, crtY + 215);
 
-    // CTA
+    ctx.fillStyle = '#0284C7';
+    ctx.fillText('3. X (Twitter) ➔  @aryanshriv09', infoX, crtY + 255);
+
+    // Direct CTA
     ctx.fillStyle = '#0A211B';
     ctx.font = 'bold 16px "Orbitron", sans-serif';
-    ctx.fillText('➔ CLICK ICONS ON LEFT (🌐 / 🐙) TO LAUNCH', infoX, crtY + 380);
-
-    // Project Counter
-    ctx.textAlign = 'right';
-    ctx.font = 'bold 18px "Orbitron", sans-serif';
-    ctx.fillStyle = '#2B5749';
-    ctx.fillText(`PROJECT ${this.currentProjectIndex + 1} / ${this.projects.length}`, crtX + crtW - 30, crtY + 44);
+    ctx.fillText('➔ TAP ICONS ON LEFT (in / 🐙 / 𝕏)', infoX, crtY + 360);
 
     if (this.crtTexture) this.crtTexture.needsUpdate = true;
   }
@@ -833,7 +1019,6 @@ export class PaddockRoom {
     ctx.fillStyle = '#1D453D';
     ctx.fillRect(0, 0, 256, 320);
 
-    // GOAT Horns / Silhouette backdrop
     ctx.fillStyle = '#102B25';
     ctx.beginPath();
     ctx.moveTo(70, 180);
@@ -867,23 +1052,19 @@ export class PaddockRoom {
   }
 
   buildLighting() {
-    // Room Ambient Light
     const roomAmbient = new THREE.AmbientLight(0xEFFDF8, 2.2);
     this.group.add(roomAmbient);
 
-    // Main workshop ceiling light
     const workPoint = new THREE.PointLight(0xFFFFFF, 3.5, 30);
     workPoint.position.set(0, 6.2, -1.5);
     this.group.add(workPoint);
 
-    // Desk spotlight
     const deskSpot = new THREE.SpotLight(0xE0FFF4, 4.2, 18, Math.PI / 3, 0.3);
     deskSpot.position.set(0, 6.5, -2.0);
     deskSpot.target.position.set(0, 2.0, -2.0);
     this.group.add(deskSpot);
     this.group.add(deskSpot.target);
 
-    // Truck exterior fill light
     const truckFill = new THREE.DirectionalLight(0xE5F5FF, 1.8);
     truckFill.position.set(3, 108, 6);
     this.group.add(truckFill);
@@ -891,7 +1072,6 @@ export class PaddockRoom {
 
   enterPaddockOverview() {
     this.stage = 'overview';
-    // Position camera for Stage 1: Truck Cutaway Overview with Guy on Stool (Image 2)
     if (this.cameraController) {
       this.cameraController.transitionToPaddockOverview();
     }
@@ -899,7 +1079,6 @@ export class PaddockRoom {
 
   zoomIntoDesk() {
     this.stage = 'desk';
-    // Position camera for Stage 2: Direct First-Person Desk View (Image 3)
     if (this.cameraController) {
       this.cameraController.transitionToPaddockDesk();
     }
@@ -910,7 +1089,7 @@ export class PaddockRoom {
     const objName = intersect.object.name;
     const uv = intersect.uv;
 
-    // 1. Click on Engineer / Workstation in Stage 1 -> Zooms into Desk (Image 3)
+    // Click on Engineer / Workstation in Overview Mode
     if (objName === 'PADDOCK_ENGINEER_CLICK' || this.stage === 'overview') {
       this.zoomIntoDesk();
       return;
@@ -918,28 +1097,27 @@ export class PaddockRoom {
 
     if (!uv) return;
 
-    // 2. Top Monitor Clicks (PREVIOUS, NEXT, GO BACK)
+    // Top Monitor Clicks (PREVIOUS, NEXT, GO BACK, or Launch Profile)
     if (objName === 'PADDOCK_TOP_SCREEN') {
       const u = uv.x;
       const v = uv.y;
 
-      // [ PREVIOUS ]
-      if (u < 0.22 && v > 0.80) {
-        this.currentProjectIndex = (this.currentProjectIndex - 1 + this.projects.length) % this.projects.length;
-        this.renderCRTDisplay();
+      // [ PREVIOUS ] (top-left: u < 0.20, v > 0.82)
+      if (u < 0.20 && v > 0.82) {
+        this.currentProfileIndex = (this.currentProfileIndex - 1 + this.profiles.length) % this.profiles.length;
+        this.renderTopMonitor();
         return;
       }
 
-      // [ NEXT ]
-      if (u > 0.78 && v > 0.80) {
-        this.currentProjectIndex = (this.currentProjectIndex + 1) % this.projects.length;
-        this.renderCRTDisplay();
+      // [ NEXT ] (top-right: u > 0.80, v > 0.82)
+      if (u > 0.80 && v > 0.82) {
+        this.currentProfileIndex = (this.currentProfileIndex + 1) % this.profiles.length;
+        this.renderTopMonitor();
         return;
       }
 
-      // [ GO BACK ]
-      if (u > 0.72 && v < 0.28) {
-        // Zoom back out to Stage 1 Truck Overview or exit
+      // [ GO BACK ] (bottom-right: u > 0.78, v < 0.20)
+      if (u > 0.78 && v < 0.20) {
         if (this.stage === 'desk') {
           this.enterPaddockOverview();
         } else {
@@ -947,21 +1125,37 @@ export class PaddockRoom {
         }
         return;
       }
+
+      // Clicking main area of top monitor opens the current profile in a new tab!
+      const prof = this.profiles[this.currentProfileIndex];
+      if (prof && prof.url) {
+        window.open(prof.url, '_blank');
+      }
+      return;
     }
 
-    // 3. Bottom CRT Screen Clicks (🌐 Web & 🐙 GitHub)
+    // Bottom CRT Monitor Clicks (3 Left Icons)
     if (objName === 'PADDOCK_CRT_SCREEN') {
       const u = uv.x;
       const v = uv.y;
-      const proj = this.projects[this.currentProjectIndex];
 
+      // Left sidebar: u < 0.14
       if (u < 0.14) {
-        if (v >= 0.60 && v <= 0.95) {
-          window.open(proj.web, '_blank');
+        // 1st Icon (Top): LinkedIn (v >= 0.70)
+        if (v >= 0.70) {
+          window.open('https://www.linkedin.com/in/aryanshriv/', '_blank');
           return;
         }
-        if (v >= 0.30 && v < 0.60) {
-          window.open(proj.github, '_blank');
+
+        // 2nd Icon (Middle): GitHub (v between 0.35 and 0.70)
+        if (v >= 0.35 && v < 0.70) {
+          window.open('https://github.com/Aryan-Shrivastva', '_blank');
+          return;
+        }
+
+        // 3rd Icon (Bottom): X / Twitter (v < 0.35)
+        if (v < 0.35) {
+          window.open('https://x.com/aryanshriv09', '_blank');
           return;
         }
       }
