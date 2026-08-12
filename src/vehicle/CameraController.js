@@ -142,14 +142,21 @@ export class CameraController {
       this.camera.fov = 55 + Math.min((currentSpeed * 3.6) / 350, 1.0) * 12;
       this.camera.updateProjectionMatrix();
     }
+    else if (this.mode === 'paddock') {
+      // 4. 3D PADDOCK ROOM FRAMING (MATCHING EXACT PERSPECTIVE OF IMAGE 2)
+      this.camera.position.set(-0.15, 104.25, -0.2);
+      this.camera.lookAt(new THREE.Vector3(-0.15, 104.3, -3.7));
+      this.camera.fov = 54;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   transitionToPaddock(callback) {
     this.mode = 'paddock';
     gsap.to(this.camera.position, {
-      x: 0,
-      y: 1.5,
-      z: -2.5,
+      x: -0.15,
+      y: 104.25,
+      z: -0.2,
       duration: 1.2,
       ease: 'power3.inOut',
       onComplete: () => {
@@ -159,7 +166,7 @@ export class CameraController {
   }
 
   transitionToCockpit(carPos, heading, callback) {
-    const eyeOffset = new THREE.Vector3(0, 0.72, 0.15);
+    const eyeOffset = new THREE.Vector3(0, 0.92, 0.30);
     eyeOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), heading);
     const targetPos = carPos.clone().add(eyeOffset);
 

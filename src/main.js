@@ -11,7 +11,7 @@ import { CameraController } from './vehicle/CameraController.js';
 import { SoundManager } from './audio/SoundManager.js';
 import { LobbyUI } from './ui/LobbyUI.js';
 import { TelemetryHUD } from './ui/TelemetryHUD.js';
-import { PaddockHUD } from './ui/PaddockHUD.js';
+import { PaddockRoom } from './world/PaddockRoom.js';
 
 /**
  * Formula 1 Grand Prix Portfolio - Main Application Controller
@@ -50,13 +50,13 @@ class F1PortfolioApp {
     this.driver1Char = null;
     this.driver2Char = null;
     this.gridManager = null;
+    this.paddockRoom = null;
     this.physics = new VehiclePhysics();
     this.cameraController = null;
 
     // UI Modules
     this.lobbyUI = null;
     this.telemetryHUD = null;
-    this.paddockHUD = null;
 
     // Pitstop State
     this.selectedTireCompound = 'SOFT';
@@ -169,7 +169,10 @@ class F1PortfolioApp {
     this.f1Car.group.position.set(0, 0, 0);
     this.showroomSpotlight.target = this.f1Car.group;
 
-    // 5. 3D Drivers for Page 2
+    // 5. 3D Paddock Garage Workstation Room (Matching Image 2)
+    this.paddockRoom = new PaddockRoom(this.scene, () => this.returnToCockpit());
+
+    // 6. 3D Drivers for Page 2
     const d1 = this.selectedTeam.drivers[0];
     const d2 = this.selectedTeam.drivers[1];
 
@@ -240,8 +243,6 @@ class F1PortfolioApp {
       onResetCar: () => this.resetCarToTrack(),
       onReturnLobby: () => this.returnToLobby()
     });
-
-    this.paddockHUD = new PaddockHUD(() => this.returnToCockpit());
   }
 
   setupPitStopUI() {
@@ -325,9 +326,6 @@ class F1PortfolioApp {
 
     if (this.f1Car) {
       this.f1Car.updateTeam(team);
-    }
-    if (this.paddockHUD) {
-      this.paddockHUD.updateTeam(team);
     }
 
     if (this.podiumRingMaterial) {
@@ -482,14 +480,11 @@ class F1PortfolioApp {
     this.soundManager.playRadioChime();
     this.telemetryHUD.hide();
 
-    this.cameraController.transitionToPaddock(() => {
-      this.paddockHUD.show();
-    });
+    this.cameraController.transitionToPaddock();
   }
 
   returnToCockpit() {
     if (this.gameState !== 'paddock') return;
-    this.paddockHUD.hide();
 
     this.cameraController.transitionToCockpit(
       this.physics.position,
@@ -505,7 +500,6 @@ class F1PortfolioApp {
   returnToLobby() {
     this.gameState = 'lobby';
     this.telemetryHUD.hide();
-    this.paddockHUD.hide();
     this.gridManager.clearGrid();
 
     const gantryEl = document.getElementById('cockpit-start-gantry');
@@ -590,7 +584,14 @@ class F1PortfolioApp {
       this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
-      if (this.gameState === 'racing') {
+      if (this.gameState === 'paddock') {
+        if (this.paddockRoom && this.paddockRoom.interactiveObjects) {
+          const hits = this.raycaster.intersectObjects(this.paddockRoom.interactiveObjects, true);
+          if (hits.length > 0) {
+            this.paddockRoom.handleScreenClick(hits[0]);
+          }
+        }
+      } else if (this.gameState === 'racing') {
         const intersects = this.raycaster.intersectObjects(this.f1Car.group.children, true);
         for (let hit of intersects) {
           if (hit.object.name === 'STEERING_PADDOCK_BTN' || hit.object.parent?.name === 'STEERING_PADDOCK_BTN') {
