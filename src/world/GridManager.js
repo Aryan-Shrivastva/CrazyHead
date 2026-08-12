@@ -4,7 +4,7 @@ import { F1Car } from '../vehicle/F1Car.js';
 
 /**
  * Starting Grid Manager: Generates 20 F1 Cars on the Monza Grid
- * Fast on straights, visibly slows down in corners/chicanes.
+ * Smooth, consistent, balanced competitive F1 race pace around the whole circuit.
  */
 export class GridManager {
   constructor(scene, monzaTrack) {
@@ -71,8 +71,7 @@ export class GridManager {
           position: new THREE.Vector3(slot.x, 0, slot.z),
           progress: nearest.u || 0.01,
           speed: 0, // Starts at 0 km/h on the starting grid
-          straightSpeed: 70 + (20 - slotIndex) * 0.4 + (Math.random() * 2 - 1), // Fast on straights
-          cornerSpeed: 22 + Math.random() * 4 // Slow in corners (30% speed)
+          targetSpeed: 68 + (20 - slotIndex) * 0.4 + (Math.random() * 2 - 1) // ~245 - 275 km/h balanced F1 pack racing!
         });
 
         rivalIndex++;
@@ -98,27 +97,10 @@ export class GridManager {
     if (dt > 0.05) dt = 0.05;
 
     this.gridCars.forEach((ai, idx) => {
-      const p = ai.progress;
+      // Smooth starting launch acceleration to target speed
+      ai.speed = THREE.MathUtils.lerp(ai.speed, ai.targetSpeed, dt * 0.85);
 
-      // Exact corner zones on the Monza circuit:
-      // Turn 1/2 Rettifilo Chicane: 0.09 - 0.15
-      // Turn 4/5 Roggia Chicane: 0.27 - 0.34
-      // Lesmo 1 & 2: 0.35 - 0.44
-      // Turn 8/9/10 Ascari Chicane: 0.66 - 0.74
-      // Turn 11 Parabolica: 0.88 - 0.98
-      const isCorner = (p >= 0.09 && p <= 0.15) ||
-                       (p >= 0.27 && p <= 0.34) ||
-                       (p >= 0.35 && p <= 0.44) ||
-                       (p >= 0.66 && p <= 0.74) ||
-                       (p >= 0.88 && p <= 0.98);
-
-      // Target speed: Fast on straights, slow in corners
-      const targetSpeed = isCorner ? ai.cornerSpeed : ai.straightSpeed;
-
-      // Smoothly transition speed
-      ai.speed = THREE.MathUtils.lerp(ai.speed, targetSpeed, dt * 2.8);
-
-      // Advance along Monza track
+      // Advance along Monza spline
       ai.progress += (ai.speed * dt) / 2800;
       if (ai.progress > 1) ai.progress -= 1;
 

@@ -217,20 +217,6 @@ export class F1Car {
     intake.position.set(0, 0.76, 0.1);
     this.group.add(intake);
 
-    // Shark Fin
-    const sharkFinShape = new THREE.Shape();
-    sharkFinShape.moveTo(0, 0);
-    sharkFinShape.lineTo(0, 0.4);
-    sharkFinShape.lineTo(-1.1, 0.12);
-    sharkFinShape.lineTo(-1.1, 0);
-    sharkFinShape.closePath();
-
-    const extrudeSettings = { depth: 0.025, bevelEnabled: false };
-    const sharkFinGeo = new THREE.ExtrudeGeometry(sharkFinShape, extrudeSettings);
-    const sharkFin = new THREE.Mesh(sharkFinGeo, this.materials.subAccent);
-    sharkFin.position.set(-0.012, 0.58, -0.2);
-    this.group.add(sharkFin);
-
     // T-Cam on top
     const tCamGeo = new THREE.BoxGeometry(0.18, 0.04, 0.06);
     const tCam = new THREE.Mesh(tCamGeo, this.materials.carbon);
