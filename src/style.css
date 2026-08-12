@@ -66,7 +66,7 @@ html, body {
 }
 
 /* ==========================================================================
-   SCREEN OVERLAYS (STRICT HIDING & POINTER EVENT CONTROLS)
+   SCREEN OVERLAYS
    ========================================================================== */
 
 .screen-overlay {
@@ -266,8 +266,8 @@ html, body {
 }
 
 /* ==========================================================================
-   PAGE 2: DRIVER CAREER (CONFIRM SETTINGS / 3D DRIVER IN FRONT OF CAR)
-   ========================================================================= */
+   PAGE 2: DRIVER CAREER
+   ========================================================================== */
 
 .driver-career-banner {
   display: flex;
@@ -576,6 +576,14 @@ html, body {
   backdrop-filter: blur(16px);
   z-index: 50;
   pointer-events: auto;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.cockpit-start-gantry.hidden {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-20px) !important;
+  pointer-events: none !important;
+  display: none !important;
 }
 
 .gantry-header {
@@ -1131,13 +1139,188 @@ html, body {
   font-weight: 800;
 }
 
-.hud-btn.highlight:hover {
-  background: linear-gradient(135deg, #FF1A14 0%, var(--f1-red) 100%);
+.hud-btn.pitstop-btn {
+  background: linear-gradient(135deg, #FF9500 0%, #C97200 100%);
+  border-color: #FFA726;
+  box-shadow: 0 0 16px rgba(255, 149, 0, 0.4);
+  font-weight: 800;
 }
 
 .key-shortcut {
   font-size: 9px;
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==========================================================================
+   PIT STOP SERVICE MODAL
+   ========================================================================== */
+
+.pitstop-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  transition: opacity 0.2s ease;
+}
+
+.pitstop-modal.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.pitstop-card {
+  width: 520px;
+  background: #0E121A;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pitstop-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.pit-badge {
+  font-size: 28px;
+}
+
+.pitstop-header h3 {
+  font-family: var(--font-telemetry);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.pitstop-header p {
+  font-family: var(--font-telemetry);
+  font-size: 10px;
+  color: var(--f1-muted);
+  letter-spacing: 1px;
+}
+
+.pitstop-tires-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.tire-opt-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tire-opt-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tire-opt-card.selected {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--f1-yellow);
+  box-shadow: 0 0 16px rgba(255, 242, 0, 0.3);
+}
+
+.tire-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-telemetry);
+  font-size: 16px;
+  font-weight: 900;
+  color: #000;
+}
+.tire-ring.red { background: #FF2B24; color: #FFF; box-shadow: 0 0 12px #FF2B24; }
+.tire-ring.yellow { background: #FFD600; color: #000; box-shadow: 0 0 12px #FFD600; }
+.tire-ring.white { background: #FFFFFF; color: #000; box-shadow: 0 0 12px #FFFFFF; }
+
+.tire-name {
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tire-spec {
+  font-size: 9px;
+  color: var(--f1-muted);
+  text-align: center;
+}
+
+.pitstop-wing-service {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.wing-repair-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pitstop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pit-btn {
+  font-family: var(--font-telemetry);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.pit-btn.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFF;
+}
+.pit-btn.cancel:hover { background: rgba(255, 255, 255, 0.2); }
+
+.pit-btn.execute {
+  background: linear-gradient(135deg, #34C759 0%, #248A3D 100%);
+  color: #FFF;
+  box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
+}
+.pit-btn.execute:hover {
+  background: linear-gradient(135deg, #38E065 0%, #29A045 100%);
+  box-shadow: 0 6px 24px rgba(52, 199, 89, 0.6);
 }
 
 /* Mobile Touch Controls */

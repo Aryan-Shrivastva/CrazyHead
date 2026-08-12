@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Formula 1 Grand Prix Portfolio | Monza Experience</title>
-  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team, select your driver, race at Monza with 20 cars on the grid, and enter the Paddock engineering workstation." />
+  <meta name="description" content="An interactive 3D Formula 1 racing portfolio on Monza circuit built with Three.js. Select your team, select your driver, race at Monza with 20 cars on the grid, execute pit stops, and enter the Paddock engineering workstation." />
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -225,6 +225,12 @@
 
       <!-- Quick Action Buttons -->
       <div class="hud-action-bar">
+        <button id="hud-pitstop-btn" class="hud-btn pitstop-btn" title="Call Pit Stop Service [B]">
+          <span class="hud-btn-icon">🔧</span>
+          <span class="hud-btn-text">PIT STOP (BOX)</span>
+          <span class="key-shortcut">[B]</span>
+        </button>
+
         <button id="hud-paddock-btn" class="hud-btn highlight" title="Visit Team Paddock & Workstation [P]">
           <span class="hud-btn-icon">🏢</span>
           <span class="hud-btn-text">PADDOCK HQ</span>
@@ -260,6 +266,49 @@
         <button id="touch-brake" class="touch-btn brake">BRAKE</button>
         <button id="touch-gas" class="touch-btn gas">GAS</button>
         <button id="touch-drs" class="touch-btn boost">DRS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PIT STOP SERVICE MODAL ================= -->
+  <div id="pitstop-modal" class="pitstop-modal hidden">
+    <div class="pitstop-card">
+      <div class="pitstop-header">
+        <span class="pit-badge">🔧</span>
+        <div>
+          <h3>PIT STOP CREW SERVICE</h3>
+          <p>SELECT TIRE COMPOUND & FRONT WING REPLACEMENT</p>
+        </div>
+      </div>
+
+      <div class="pitstop-tires-grid">
+        <div class="tire-opt-card selected" data-tire="SOFT">
+          <div class="tire-ring red">S</div>
+          <span class="tire-name">P-ZERO RED (SOFT)</span>
+          <span class="tire-spec">Max Grip • 100% Pace</span>
+        </div>
+        <div class="tire-opt-card" data-tire="MEDIUM">
+          <div class="tire-ring yellow">M</div>
+          <span class="tire-name">P-ZERO YELLOW (MED)</span>
+          <span class="tire-spec">Balanced • Extended Stint</span>
+        </div>
+        <div class="tire-opt-card" data-tire="HARD">
+          <div class="tire-ring white">H</div>
+          <span class="tire-name">P-ZERO WHITE (HARD)</span>
+          <span class="tire-spec">Ultra Durable • Consistent</span>
+        </div>
+      </div>
+
+      <div class="pitstop-wing-service">
+        <label class="wing-repair-toggle">
+          <input type="checkbox" id="repair-wing-check" checked />
+          <span>Install New Aero Nose Cone & Front Wing Assembly</span>
+        </label>
+      </div>
+
+      <div class="pitstop-actions">
+        <button id="cancel-pitstop-btn" class="pit-btn cancel">ABORT BOX</button>
+        <button id="confirm-pitstop-btn" class="pit-btn execute">EXECUTE 2.4s PIT STOP ➔</button>
       </div>
     </div>
   </div>
@@ -362,7 +411,6 @@
 
             <a href="https://codeforces.com" target="_blank" rel="noopener noreferrer" class="profile-card codeforces">
               <div class="card-header">
-                <div class="card-icon">🏆</div>
                 <div class="card-info">
                   <h4>Codeforces</h4>
                   <span>Algorithmic Competitor</span>

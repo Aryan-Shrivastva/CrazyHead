@@ -2,32 +2,35 @@ import * as THREE from 'three';
 
 /**
  * Formula 1 Vehicle Dynamics & Physics Engine
- * Ground-locked physics (Y is strictly clamped to ground level 0),
- * speed-sensitive progressive curved steering, and lateral grip.
+ * Features realistic 2-DOF Bicycle Dynamics with angular momentum and progressive arc curving.
  */
 export class VehiclePhysics {
   constructor() {
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.heading = 0; // Radians
+    this.angularVelocity = 0; // Rotational yaw speed (rad/s) for authentic curving inertia
+
     this.steerInput = 0;
     this.currentSteer = 0;
-    this.rollAngle = 0; // Subtle chassis roll in corners
+    this.rollAngle = 0;
     this.pitchAngle = 0;
 
     // Vehicle Specifications
     this.maxSpeed = 92.0; // ~330 km/h
     this.maxReverseSpeed = 10.0;
     this.accelerationRate = 22.0;
-    this.brakingRate = 44.0;
+    this.brakingRate = 45.0;
     this.dragCoeff = 0.0016;
-    this.downforceCoeff = 0.005;
-    this.corneringGrip = 40.0;
+    this.downforceCoeff = 0.0055;
+    this.corneringGrip = 42.0;
 
-    // Damage penalties
+    // Damage & Tire compound
     this.frontWingDamaged = false;
+    this.tireCompound = 'SOFT'; // 'SOFT', 'MEDIUM', 'HARD'
+    this.tireHealth = 100.0; // 0 to 100%
 
-    // Transmission & Engine
+    // Transmission
     this.gear = 1;
     this.maxGears = 8;
     this.rpm = 4000;
@@ -59,26 +62,44 @@ export class VehiclePhysics {
   update(dt, soundManager = null) {
     if (dt > 0.05) dt = 0.05;
 
-    // ZERO OUT Y AT ALL TIMES - F1 CARS CANNOT FLY!
+    // Strict ground clamp
     this.velocity.y = 0;
     this.position.y = 0;
 
     const currentSpeed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
     const speedKmH = currentSpeed * 3.6;
 
-    // 1. PROGRESSIVE CURVED STEERING DYNAMICS
+    // 1. PROGRESSIVE CURVED STEERING & ROTATIONAL INERTIA
     const speedRatio = Math.min(currentSpeed / this.maxSpeed, 1.0);
-    // At higher speeds, steering radius widens for natural high-speed curve carving
-    const maxLock = THREE.MathUtils.lerp(Math.PI / 7.0, Math.PI / 16.0, speedRatio);
-    const targetSteering = this.steerInput * maxLock;
+    // Steering lock reduces smoothly at speed so the car carves large, elegant racing curves
+    const maxLock = THREE.MathUtils.lerp(Math.PI / 8.0, Math.PI / 18.0, Math.pow(speedRatio, 0.6));
+    const targetSteerAngle = this.steerInput * maxLock;
 
-    const steerResponseSpeed = THREE.MathUtils.lerp(8.0, 5.0, speedRatio);
-    this.currentSteer = THREE.MathUtils.lerp(this.currentSteer, targetSteering, dt * steerResponseSpeed);
+    // Smooth turn-in build up
+    this.currentSteer = THREE.MathUtils.lerp(this.currentSteer, targetSteerAngle, dt * 5.5);
 
-    // 2. TRANSMISSION & RPM
+    // 2. YAW MOMENTUM & ANGULAR VELOCITY (CURVING INSTEAD OF INSTANT SNAP)
+    if (currentSpeed > 0.2) {
+      const wheelbase = 3.6;
+      // Target yaw rate determined by curvature
+      const targetYawRate = (Math.tan(this.currentSteer) * currentSpeed) / wheelbase;
+
+      // Angular acceleration with rotational damping
+      const yawInertiaSpeed = THREE.MathUtils.lerp(4.2, 2.8, speedRatio);
+      this.angularVelocity = THREE.MathUtils.lerp(this.angularVelocity, targetYawRate, dt * yawInertiaSpeed);
+      this.heading += this.angularVelocity * dt;
+    } else {
+      this.angularVelocity = THREE.MathUtils.lerp(this.angularVelocity, 0, dt * 8.0);
+    }
+
+    // 3. CHASSIS ROLL & PITCH
+    this.rollAngle = THREE.MathUtils.lerp(this.rollAngle, -this.angularVelocity * 0.08, dt * 6.0);
+    this.pitchAngle = THREE.MathUtils.lerp(this.pitchAngle, (this.throttle * 0.015) - (this.brake * 0.025), dt * 6.0);
+
+    // 4. TRANSMISSION & RPM
     this.updateGears(speedKmH, soundManager);
 
-    // 3. ERS BATTERY
+    // 5. ERS BATTERY & ENGINE FORCE
     if (this.isOvertakeActive && this.throttle > 0.5) {
       this.battery = Math.max(0, this.battery - dt * 6.5);
       this.engineMode = 'OVERTAKE';
@@ -89,7 +110,6 @@ export class VehiclePhysics {
       this.engineMode = 'BALANCED';
     }
 
-    // 4. ENGINE & BRAKE FORCES
     let enginePower = this.accelerationRate;
     if (this.isOvertakeActive && this.battery > 0) {
       enginePower *= 1.35;
@@ -111,31 +131,20 @@ export class VehiclePhysics {
       }
     }
 
-    // Aerodynamic Drag & Downforce
-    const effectiveDownforce = this.frontWingDamaged ? this.downforceCoeff * 0.4 : this.downforceCoeff;
+    // Aero Drag & Downforce
+    const effectiveDownforce = this.frontWingDamaged ? this.downforceCoeff * 0.38 : this.downforceCoeff;
     const currentDrag = this.isDrsOpen ? this.dragCoeff * 0.78 : this.dragCoeff;
     const aeroDrag = currentSpeed * currentSpeed * currentDrag;
     const netForwardAcc = forwardForce - (this.brake > 0 ? brakeForce : 0) - aeroDrag;
 
-    // 5. YAW / HEADING UPDATE (NATURAL ACKERMANN CURVE)
-    if (currentSpeed > 0.2) {
-      const wheelbase = 3.6;
-      const curvatureYawRate = (Math.tan(this.currentSteer) * currentSpeed) / wheelbase;
-      this.heading += curvatureYawRate * dt;
-    }
-
-    // Subtle chassis roll (capped to prevent tilting excessively)
-    this.rollAngle = THREE.MathUtils.lerp(this.rollAngle, -this.currentSteer * Math.min(speedRatio, 0.5) * 0.12, dt * 6.0);
-    this.pitchAngle = THREE.MathUtils.lerp(this.pitchAngle, (this.throttle * 0.015) - (this.brake * 0.025), dt * 6.0);
-
-    // Direction Vectors (Pure 2D X-Z Plane)
+    // Direction Vectors
     const forward = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
     const right = new THREE.Vector3(Math.cos(this.heading), 0, -Math.sin(this.heading));
 
-    // Longitudinal acceleration
+    // Velocity update
     let newVelocity = this.velocity.clone().addScaledVector(forward, netForwardAcc * dt);
 
-    // Lateral grip
+    // Lateral grip & centripetal tire force
     const lateralVel = right.dot(newVelocity);
     this.lateralSlip = Math.abs(lateralVel);
 
@@ -147,15 +156,14 @@ export class VehiclePhysics {
       newVelocity.multiplyScalar(Math.max(0, 1.0 - dt * 0.8));
     }
 
-    // STRICT ZERO Y VELOCITY
     newVelocity.y = 0;
     this.velocity.copy(newVelocity);
 
     this.position.x += this.velocity.x * dt;
     this.position.z += this.velocity.z * dt;
-    this.position.y = 0; // LOCKED TO GROUND!
+    this.position.y = 0;
 
-    // Sound Updates
+    // Sounds
     this.driftIntensity = Math.min(1.0, (this.lateralSlip * currentSpeed) / 75.0);
     if (soundManager) {
       const rpmRatio = Math.min(1.0, (this.rpm - this.idleRpm) / (this.maxRpm - this.idleRpm));
@@ -165,11 +173,17 @@ export class VehiclePhysics {
   }
 
   applyCollisionImpulse(impactVector, intensity = 1.0) {
-    // Pure horizontal impulse
     const impulse = new THREE.Vector3(impactVector.x, 0, impactVector.z).normalize();
-    this.velocity.addScaledVector(impulse, 4.5 * intensity);
+    this.velocity.addScaledVector(impulse, 3.5 * intensity);
     this.velocity.y = 0;
     this.position.y = 0;
+  }
+
+  performPitStop(tireCompound = 'SOFT') {
+    this.tireCompound = tireCompound;
+    this.tireHealth = 100.0;
+    this.frontWingDamaged = false;
+    this.battery = 100.0;
   }
 
   updateGears(speedKmH, soundManager) {
@@ -200,9 +214,10 @@ export class VehiclePhysics {
   }
 
   resetPosition(x = 0, y = 0, z = 0, heading = 0) {
-    this.position.set(x, 0, z); // Always ground 0
+    this.position.set(x, 0, z);
     this.velocity.set(0, 0, 0);
     this.heading = heading;
+    this.angularVelocity = 0;
     this.steerInput = 0;
     this.currentSteer = 0;
     this.rollAngle = 0;

@@ -19,7 +19,7 @@ import { PaddockHUD } from './ui/PaddockHUD.js';
 class F1PortfolioApp {
   constructor() {
     this.canvas = document.getElementById('webgl-canvas');
-    this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock'
+    this.gameState = 'lobby'; // 'lobby', 'racing', 'paddock', 'pitstop'
     this.lobbyPage = 1; // 1 = Team Select, 2 = Driver Select
     this.isLaunchAllowed = false; // Locked until 5 Red Lights turn Green!
 
@@ -58,6 +58,9 @@ class F1PortfolioApp {
     this.telemetryHUD = null;
     this.paddockHUD = null;
 
+    // Pitstop State
+    this.selectedTireCompound = 'SOFT';
+
     // Raycaster for 3D Interactions
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -82,6 +85,7 @@ class F1PortfolioApp {
     this.setupLighting();
     this.buildWorld();
     this.setupUI();
+    this.setupPitStopUI();
     this.setupInputListeners();
     this.setupSoundToggle();
 
@@ -243,6 +247,70 @@ class F1PortfolioApp {
     this.paddockHUD = new PaddockHUD(() => this.returnToCockpit());
   }
 
+  setupPitStopUI() {
+    const pitBtn = document.getElementById('hud-pitstop-btn');
+    const pitModal = document.getElementById('pitstop-modal');
+    const cancelPitBtn = document.getElementById('cancel-pitstop-btn');
+    const confirmPitBtn = document.getElementById('confirm-pitstop-btn');
+    const tireCards = document.querySelectorAll('.tire-opt-card');
+
+    if (pitBtn) {
+      pitBtn.addEventListener('click', () => this.openPitStop());
+    }
+
+    if (cancelPitBtn && pitModal) {
+      cancelPitBtn.addEventListener('click', () => {
+        pitModal.classList.add('hidden');
+      });
+    }
+
+    tireCards.forEach(card => {
+      card.addEventListener('click', () => {
+        tireCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        this.selectedTireCompound = card.getAttribute('data-tire');
+      });
+    });
+
+    if (confirmPitBtn) {
+      confirmPitBtn.addEventListener('click', () => {
+        this.executePitStop();
+      });
+    }
+  }
+
+  openPitStop() {
+    if (this.gameState !== 'racing') return;
+    const modal = document.getElementById('pitstop-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      this.soundManager.playRadioChime();
+      this.telemetryHUD.showRadioMessage('"Box box! Pit crew standing by for wing & tire service!"');
+    }
+  }
+
+  executePitStop() {
+    const modal = document.getElementById('pitstop-modal');
+    if (modal) modal.classList.add('hidden');
+
+    this.telemetryHUD.showRadioMessage('"Box complete! 2.4s stationary. Go Go Go!"');
+    this.soundManager.playGearShiftSound();
+
+    // Full car repair & new tires
+    this.f1Car.repairAllDamage();
+    this.physics.performPitStop(this.selectedTireCompound);
+
+    // Hide damage warnings
+    const warnBanner = document.getElementById('damage-warning-banner');
+    if (warnBanner) warnBanner.classList.add('hidden');
+
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+
   setupSoundToggle() {
     const soundToggle = document.getElementById('sound-toggle');
     const soundIcon = document.getElementById('sound-icon');
@@ -388,7 +456,7 @@ class F1PortfolioApp {
       } else {
         clearInterval(interval);
 
-        const randomDelay = 1000 + Math.random() * 800;
+        const randomDelay = 800 + Math.random() * 600;
         setTimeout(() => {
           // 5 RED LIGHTS TURN GREEN!
           lightPods.forEach(p => {
@@ -408,34 +476,33 @@ class F1PortfolioApp {
           }
 
           confetti({
-            particleCount: 140,
-            spread: 90,
+            particleCount: 120,
+            spread: 80,
             origin: { y: 0.5 }
           });
 
           this.telemetryHUD.showRadioMessage(`"Lights out, push to pass, ${driver.name}!"`);
 
+          // Start Gantry disappears cleanly within 600ms of green lights!
           setTimeout(() => {
             gantryEl.classList.add('hidden');
-          }, 2500);
+          }, 600);
         }, randomDelay);
       }
-    }, 700);
+    }, 650);
   }
 
   handleCarCollision(hitZone, impactDir, aiCar) {
-    if (!this.isLaunchAllowed) return; // Don't trigger during pre-race grid formation
+    if (!this.isLaunchAllowed) return;
     const currentSpeed = this.physics.velocity.length();
-    if (currentSpeed < 3.0) return; // Ignore slight stationary touches
+    if (currentSpeed < 3.0) return;
 
     const now = Date.now();
     if (now - this.lastCollisionTime < 700) return;
     this.lastCollisionTime = now;
 
-    // Apply horizontal impulse
     this.physics.applyCollisionImpulse(impactDir, 0.8);
 
-    // Trigger visual component damage
     const brokenPart = this.f1Car.triggerDamage(hitZone);
     if (brokenPart === 'FRONT_WING') {
       this.physics.frontWingDamaged = true;
@@ -447,7 +514,7 @@ class F1PortfolioApp {
     const warnText = document.getElementById('damage-text');
     if (warnBanner && warnText) {
       if (brokenPart === 'FRONT_WING') {
-        warnText.textContent = 'FRONT WING DAMAGED - HIGH-SPEED DOWNFORCE REDUCED!';
+        warnText.textContent = 'FRONT WING DAMAGED - HIGH-SPEED DOWNFORCE REDUCED! [B] BOX FOR REPAIRS';
       } else if (brokenPart === 'LEFT_MIRROR' || brokenPart === 'RIGHT_MIRROR') {
         warnText.textContent = 'SIDE MIRROR SNAPPED OFF!';
       } else if (brokenPart === 'REAR_WING') {
@@ -500,6 +567,9 @@ class F1PortfolioApp {
     const gantryEl = document.getElementById('cockpit-start-gantry');
     if (gantryEl) gantryEl.classList.add('hidden');
 
+    const pitModal = document.getElementById('pitstop-modal');
+    if (pitModal) pitModal.classList.add('hidden');
+
     if (this.showroomPodium) this.showroomPodium.visible = true;
 
     this.lobbyUI.show();
@@ -531,6 +601,9 @@ class F1PortfolioApp {
       if (key === 'c' && this.gameState === 'racing') {
         const mode = this.cameraController.toggleCameraMode();
         if (this.telemetryHUD.camNameText) this.telemetryHUD.camNameText.textContent = mode;
+      }
+      if (key === 'b' && this.gameState === 'racing') {
+        this.openPitStop();
       }
       if ((key === 'p' || key === 'tab') && this.gameState === 'racing') {
         e.preventDefault();
@@ -616,7 +689,7 @@ class F1PortfolioApp {
       this.physics.setInputs(throttle, brake, steer, this.keys.boost);
       this.physics.update(dt, this.soundManager);
 
-      // Lock car firmly to ground surface
+      // Car strictly on ground
       this.f1Car.group.position.set(this.physics.position.x, 0, this.physics.position.z);
       this.f1Car.group.rotation.y = this.physics.heading;
       this.f1Car.group.rotation.z = this.physics.rollAngle;
