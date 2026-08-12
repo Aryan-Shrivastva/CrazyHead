@@ -248,6 +248,7 @@ class F1PortfolioApp {
     const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
     const frontPaddockBtn = document.getElementById('front-paddock-btn');
     const driverPaddockBtn = document.getElementById('driver-page-paddock-btn');
+    const paddockHomeBtn = document.getElementById('paddock-home-btn');
 
     const handleLobbyPaddockClick = (e) => {
       e.stopPropagation();
@@ -257,6 +258,13 @@ class F1PortfolioApp {
     if (topPaddockBtn) topPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
     if (frontPaddockBtn) frontPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
     if (driverPaddockBtn) driverPaddockBtn.addEventListener('click', handleLobbyPaddockClick);
+
+    if (paddockHomeBtn) {
+      paddockHomeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.returnToLobby();
+      });
+    }
   }
 
   setupPitStopUI() {
@@ -496,6 +504,9 @@ class F1PortfolioApp {
     const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
     if (topPaddockBtn) topPaddockBtn.style.display = 'none';
 
+    const paddockHomeBtn = document.getElementById('paddock-home-btn');
+    if (paddockHomeBtn) paddockHomeBtn.classList.remove('hidden');
+
     if (this.paddockRoom) {
       this.paddockRoom.enterPaddockOverview();
     }
@@ -511,6 +522,9 @@ class F1PortfolioApp {
     const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
     if (topPaddockBtn) topPaddockBtn.style.display = 'none';
 
+    const paddockHomeBtn = document.getElementById('paddock-home-btn');
+    if (paddockHomeBtn) paddockHomeBtn.classList.remove('hidden');
+
     if (this.paddockRoom) {
       this.paddockRoom.enterPaddockOverview();
     }
@@ -521,6 +535,9 @@ class F1PortfolioApp {
 
     const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
     if (topPaddockBtn) topPaddockBtn.style.display = '';
+
+    const paddockHomeBtn = document.getElementById('paddock-home-btn');
+    if (paddockHomeBtn) paddockHomeBtn.classList.add('hidden');
 
     if (this.previousPaddockState === 'lobby') {
       this.gameState = 'lobby';
@@ -544,6 +561,12 @@ class F1PortfolioApp {
     this.gameState = 'lobby';
     this.telemetryHUD.hide();
     this.gridManager.clearGrid();
+
+    const topPaddockBtn = document.getElementById('lobby-paddock-top-btn');
+    if (topPaddockBtn) topPaddockBtn.style.display = '';
+
+    const paddockHomeBtn = document.getElementById('paddock-home-btn');
+    if (paddockHomeBtn) paddockHomeBtn.classList.add('hidden');
 
     const gantryEl = document.getElementById('cockpit-start-gantry');
     if (gantryEl) gantryEl.classList.add('hidden');

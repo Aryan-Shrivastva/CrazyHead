@@ -135,6 +135,46 @@ html, body {
   transform: translateY(-2px);
 }
 
+/* Paddock Return to Homepage Button */
+.paddock-home-btn {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
+  background: linear-gradient(135deg, rgba(230, 30, 26, 0.4) 0%, rgba(13, 26, 23, 0.95) 100%);
+  border: 1.5px solid #FF4D4A;
+  color: #FFFFFF;
+  padding: 10px 22px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-telemetry);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 4px 20px rgba(230, 30, 26, 0.4);
+  transition: all 0.25s ease;
+  pointer-events: auto;
+}
+
+.paddock-home-btn:hover {
+  background: linear-gradient(135deg, rgba(230, 30, 26, 0.7) 0%, rgba(20, 38, 34, 0.98) 100%);
+  border-color: #FF7B79;
+  box-shadow: 0 6px 30px rgba(230, 30, 26, 0.75);
+  transform: translateY(-2px);
+}
+
+.paddock-home-btn:active {
+  transform: scale(0.96);
+}
+
+.paddock-home-btn.hidden {
+  display: none !important;
+}
+
 .lobby-action-buttons {
   display: flex;
   align-items: center;
