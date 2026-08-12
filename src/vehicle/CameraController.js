@@ -150,10 +150,24 @@ export class CameraController {
       this.camera.updateProjectionMatrix();
     }
     else if (this.mode === 'paddock_desk') {
-      // Stage 2: DIRECT DESK WORKSTATION ZOOM (MATCHING IMAGE 3)
-      this.camera.position.set(-0.05, 104.25, -0.2);
-      this.camera.lookAt(new THREE.Vector3(-0.05, 104.3, -3.7));
-      this.camera.fov = 54;
+      // Stage 2: DIRECT DESK WORKSTATION (MATCHING IMAGE 3)
+      this.camera.position.set(-0.05, 104.3, 0.45);
+      this.camera.lookAt(new THREE.Vector3(-0.05, 104.4, -3.7));
+      this.camera.fov = 56;
+      this.camera.updateProjectionMatrix();
+    }
+    else if (this.mode === 'paddock_top_monitor') {
+      // Stage 3A: FULL-SCREEN TOP MONITOR ONLY
+      this.camera.position.set(-0.05, 106.0, -1.75);
+      this.camera.lookAt(new THREE.Vector3(-0.05, 105.7, -3.6));
+      this.camera.fov = 40;
+      this.camera.updateProjectionMatrix();
+    }
+    else if (this.mode === 'paddock_bottom_monitor') {
+      // Stage 3B: FULL-SCREEN BOTTOM MONITOR ONLY
+      this.camera.position.set(-0.05, 103.4, -1.6);
+      this.camera.lookAt(new THREE.Vector3(-0.05, 103.4, -3.7));
+      this.camera.fov = 42;
       this.camera.updateProjectionMatrix();
     }
   }
@@ -164,7 +178,7 @@ export class CameraController {
       x: 0.4,
       y: 103.8,
       z: 4.4,
-      duration: 1.2,
+      duration: 1.0,
       ease: 'power3.inOut',
       onComplete: () => {
         if (callback) callback();
@@ -176,9 +190,37 @@ export class CameraController {
     this.mode = 'paddock_desk';
     gsap.to(this.camera.position, {
       x: -0.05,
-      y: 104.25,
-      z: -0.2,
-      duration: 1.0,
+      y: 104.3,
+      z: 0.45,
+      duration: 0.9,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        if (callback) callback();
+      }
+    });
+  }
+
+  transitionToPaddockTopMonitor(callback) {
+    this.mode = 'paddock_top_monitor';
+    gsap.to(this.camera.position, {
+      x: -0.05,
+      y: 106.0,
+      z: -1.75,
+      duration: 0.8,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        if (callback) callback();
+      }
+    });
+  }
+
+  transitionToPaddockBottomMonitor(callback) {
+    this.mode = 'paddock_bottom_monitor';
+    gsap.to(this.camera.position, {
+      x: -0.05,
+      y: 103.4,
+      z: -1.6,
+      duration: 0.8,
       ease: 'power3.inOut',
       onComplete: () => {
         if (callback) callback();

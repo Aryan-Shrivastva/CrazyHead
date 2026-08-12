@@ -632,121 +632,126 @@ export class PaddockRoom {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#94A3B8';
     ctx.font = '17px "JetBrains Mono", monospace';
-    ctx.fillText(`HANDLE: @${prof.handle}`, 32, 94);
+    ctx.fillText(`HANDLE: @${prof.handle}`, 44, 94);
 
     ctx.fillStyle = prof.color;
     ctx.font = 'bold 15px "Orbitron", sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`➔ CLICK ANYWHERE TO OPEN ${prof.platform}`, w - 32, 94);
+    ctx.fillText(`➔ CLICK ANYWHERE TO OPEN ${prof.platform.toUpperCase()}`, w - 44, 94);
 
     // 4. Metrics Cards Row (Questions Done, Active Days, Max Streak, Ranking)
-    const cardY = 115;
-    const cardH = 88;
+    const cardY = 114;
+    const cardH = 92;
 
     if (prof.id === 'github') {
       // GitHub Focus: Submissions & Contributions
-      const colW = (w - 64 - 24) / 2;
+      const colW = (1192 - 20) / 2;
 
       // Card 1: Total Contributions
       ctx.fillStyle = '#1B2A30';
-      ctx.fillRect(32, cardY, colW, cardH);
+      ctx.fillRect(44, cardY, colW, cardH);
       ctx.strokeStyle = '#2A444E';
-      ctx.strokeRect(32, cardY, colW, cardH);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(44, cardY, colW, cardH);
 
+      ctx.textAlign = 'left';
       ctx.fillStyle = '#A0C4D0';
       ctx.font = 'bold 13px "Orbitron", sans-serif';
-      ctx.fillText('TOTAL CONTRIBUTIONS', 50, cardY + 22);
+      ctx.fillText('TOTAL CONTRIBUTIONS', 64, cardY + 26);
       ctx.fillStyle = '#22C55E';
       ctx.font = '900 32px "Orbitron", sans-serif';
-      ctx.fillText(prof.questionsDone, 50, cardY + 62);
+      ctx.fillText(prof.questionsDone, 64, cardY + 66);
 
       // Card 2: Repos & Commits
       ctx.fillStyle = '#1B2A30';
-      ctx.fillRect(32 + colW + 24, cardY, colW, cardH);
+      ctx.fillRect(44 + colW + 20, cardY, colW, cardH);
       ctx.strokeStyle = '#2A444E';
-      ctx.strokeRect(32 + colW + 24, cardY, colW, cardH);
+      ctx.strokeRect(44 + colW + 20, cardY, colW, cardH);
 
       ctx.fillStyle = '#A0C4D0';
       ctx.font = 'bold 13px "Orbitron", sans-serif';
-      ctx.fillText('ACTIVITY & REPOSITORIES', 50 + colW + 24, cardY + 22);
+      ctx.fillText('ACTIVITY & REPOSITORIES', 64 + colW + 20, cardY + 26);
       ctx.fillStyle = '#38BDF8';
       ctx.font = 'bold 24px "Titillium Web", sans-serif';
-      ctx.fillText(prof.breakdown, 50 + colW + 24, cardY + 62);
+      ctx.fillText(prof.breakdown, 64 + colW + 20, cardY + 66);
     } else {
       // LeetCode, Codeforces, CodeChef: 3-Metric Cards
-      const colW = (w - 64 - 32) / 3;
+      const colW = (1192 - 32) / 3;
 
       // Metric 1: Questions Done
       ctx.fillStyle = '#1B2A30';
-      ctx.fillRect(32, cardY, colW, cardH);
+      ctx.fillRect(44, cardY, colW, cardH);
       ctx.strokeStyle = '#2A444E';
-      ctx.strokeRect(32, cardY, colW, cardH);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(44, cardY, colW, cardH);
 
+      ctx.textAlign = 'left';
       ctx.fillStyle = '#A0C4D0';
       ctx.font = 'bold 12px "Orbitron", sans-serif';
-      ctx.fillText('QUESTIONS SOLVED', 46, cardY + 20);
+      ctx.fillText('QUESTIONS SOLVED', 60, cardY + 24);
       ctx.fillStyle = prof.color;
       ctx.font = '900 28px "Orbitron", sans-serif';
-      ctx.fillText(prof.questionsDone, 46, cardY + 54);
+      ctx.fillText(prof.questionsDone, 60, cardY + 56);
       ctx.fillStyle = '#94A3B8';
       ctx.font = '13px "Titillium Web", sans-serif';
-      ctx.fillText(prof.breakdown, 46, cardY + 76);
+      ctx.fillText(prof.breakdown, 60, cardY + 78);
 
       // Metric 2: Active Days
       ctx.fillStyle = '#1B2A30';
-      ctx.fillRect(32 + colW + 16, cardY, colW, cardH);
+      ctx.fillRect(44 + colW + 16, cardY, colW, cardH);
       ctx.strokeStyle = '#2A444E';
-      ctx.strokeRect(32 + colW + 16, cardY, colW, cardH);
+      ctx.strokeRect(44 + colW + 16, cardY, colW, cardH);
 
       ctx.fillStyle = '#A0C4D0';
       ctx.font = 'bold 12px "Orbitron", sans-serif';
-      ctx.fillText('ACTIVE DAYS', 46 + colW + 16, cardY + 20);
+      ctx.fillText('ACTIVE DAYS', 60 + colW + 16, cardY + 24);
       ctx.fillStyle = '#38BDF8';
       ctx.font = '900 28px "Orbitron", sans-serif';
-      ctx.fillText(prof.activeDays, 46 + colW + 16, cardY + 54);
+      ctx.fillText(prof.activeDays, 60 + colW + 16, cardY + 56);
       ctx.fillStyle = '#94A3B8';
       ctx.font = '13px "Titillium Web", sans-serif';
-      ctx.fillText('Consistency Tracker', 46 + colW + 16, cardY + 76);
+      ctx.fillText('Consistency Tracker', 60 + colW + 16, cardY + 78);
 
       // Metric 3: Max Streak
       ctx.fillStyle = '#1B2A30';
-      ctx.fillRect(32 + (colW + 16) * 2, cardY, colW, cardH);
+      ctx.fillRect(44 + (colW + 16) * 2, cardY, colW, cardH);
       ctx.strokeStyle = '#2A444E';
-      ctx.strokeRect(32 + (colW + 16) * 2, cardY, colW, cardH);
+      ctx.strokeRect(44 + (colW + 16) * 2, cardY, colW, cardH);
 
       ctx.fillStyle = '#A0C4D0';
       ctx.font = 'bold 12px "Orbitron", sans-serif';
-      ctx.fillText('MAX STREAK', 46 + (colW + 16) * 2, cardY + 20);
+      ctx.fillText('MAX STREAK', 60 + (colW + 16) * 2, cardY + 24);
       ctx.fillStyle = '#F59E0B';
       ctx.font = '900 28px "Orbitron", sans-serif';
-      ctx.fillText(prof.maxStreak, 46 + (colW + 16) * 2, cardY + 54);
+      ctx.fillText(prof.maxStreak, 60 + (colW + 16) * 2, cardY + 56);
       ctx.fillStyle = '#94A3B8';
       ctx.font = '13px "Titillium Web", sans-serif';
-      ctx.fillText(prof.ranking, 46 + (colW + 16) * 2, cardY + 76);
+      ctx.fillText(prof.ranking, 60 + (colW + 16) * 2, cardY + 78);
     }
 
     // 5. 52-Week Submissions Activity Heatmap Grid
-    const gridY = 230;
-    const gridBoxH = 220;
+    const gridY = 222;
+    const gridBoxH = 226;
 
     ctx.fillStyle = '#0F181C';
-    ctx.fillRect(32, gridY, w - 64, gridBoxH);
+    ctx.fillRect(44, gridY, 1192, gridBoxH);
     ctx.strokeStyle = '#223842';
-    ctx.strokeRect(32, gridY, w - 64, gridBoxH);
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(44, gridY, 1192, gridBoxH);
 
     ctx.fillStyle = '#E2E8F0';
     ctx.font = 'bold 15px "Orbitron", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('SUBMISSION & CONTRIBUTION ACTIVITY GRID (YEARLY HEATMAP)', 50, gridY + 28);
+    ctx.fillText('SUBMISSION & CONTRIBUTION ACTIVITY GRID (YEARLY HEATMAP)', 64, gridY + 30);
 
     // Render 52 columns x 7 rows heatmap matrix
     const numCols = 52;
     const numRows = 7;
-    const cellW = 19;
-    const cellH = 17;
-    const gap = 3;
+    const cellW = 18;
+    const cellH = 16;
+    const gap = 4;
     const startX = 64;
-    const startY = gridY + 48;
+    const startY = gridY + 50;
 
     const colors = [
       '#1E2C33', // 0 submissions
@@ -1077,11 +1082,28 @@ export class PaddockRoom {
     }
   }
 
-  zoomIntoDesk() {
-    this.stage = 'desk';
+  zoomIntoTopMonitor() {
+    this.stage = 'top_monitor';
     if (this.cameraController) {
-      this.cameraController.transitionToPaddockDesk();
+      this.cameraController.transitionToPaddockTopMonitor();
     }
+  }
+
+  zoomIntoBottomMonitor() {
+    this.stage = 'bottom_monitor';
+    if (this.cameraController) {
+      this.cameraController.transitionToPaddockBottomMonitor();
+    }
+  }
+
+  prevProfile() {
+    this.currentProfileIndex = (this.currentProfileIndex - 1 + this.profiles.length) % this.profiles.length;
+    this.renderTopMonitor();
+  }
+
+  nextProfile() {
+    this.currentProfileIndex = (this.currentProfileIndex + 1) % this.profiles.length;
+    this.renderTopMonitor();
   }
 
   handleScreenClick(intersect) {
@@ -1089,44 +1111,51 @@ export class PaddockRoom {
     const objName = intersect.object.name;
     const uv = intersect.uv;
 
-    // Click on Engineer / Workstation in Overview Mode
-    if (objName === 'PADDOCK_ENGINEER_CLICK' || this.stage === 'overview') {
+    // 1. Stage 1: Truck Overview -> Click anywhere on workstation zooms to Desk
+    if (this.stage === 'overview') {
       this.zoomIntoDesk();
+      return;
+    }
+
+    // 2. Stage 2: Desk View -> Click on Top Screen zooms into Top Monitor ONLY; Click on CRT zooms into Bottom Monitor ONLY
+    if (this.stage === 'desk') {
+      if (objName === 'PADDOCK_TOP_SCREEN') {
+        this.zoomIntoTopMonitor();
+        return;
+      }
+      if (objName === 'PADDOCK_CRT_SCREEN') {
+        this.zoomIntoBottomMonitor();
+        return;
+      }
       return;
     }
 
     if (!uv) return;
 
-    // Top Monitor Clicks (PREVIOUS, NEXT, GO BACK, or Launch Profile)
-    if (objName === 'PADDOCK_TOP_SCREEN') {
+    // 3. Stage 3A: Focused on Top Monitor ONLY
+    if (this.stage === 'top_monitor' && objName === 'PADDOCK_TOP_SCREEN') {
       const u = uv.x;
       const v = uv.y;
 
-      // [ PREVIOUS ] (top-left: u < 0.20, v > 0.82)
+      // [ PREVIOUS ] Button (top-left: u < 0.20, v > 0.82)
       if (u < 0.20 && v > 0.82) {
-        this.currentProfileIndex = (this.currentProfileIndex - 1 + this.profiles.length) % this.profiles.length;
-        this.renderTopMonitor();
+        this.prevProfile();
         return;
       }
 
-      // [ NEXT ] (top-right: u > 0.80, v > 0.82)
+      // [ NEXT ] Button (top-right: u > 0.80, v > 0.82)
       if (u > 0.80 && v > 0.82) {
-        this.currentProfileIndex = (this.currentProfileIndex + 1) % this.profiles.length;
-        this.renderTopMonitor();
+        this.nextProfile();
         return;
       }
 
-      // [ GO BACK ] (bottom-right: u > 0.78, v < 0.20)
+      // [ GO BACK ] Button (bottom-right: u > 0.78, v < 0.20)
       if (u > 0.78 && v < 0.20) {
-        if (this.stage === 'desk') {
-          this.enterPaddockOverview();
-        } else {
-          if (this.onExitPaddock) this.onExitPaddock();
-        }
+        this.zoomIntoDesk();
         return;
       }
 
-      // Clicking main area of top monitor opens the current profile in a new tab!
+      // Clicking main content area opens the active coding profile
       const prof = this.profiles[this.currentProfileIndex];
       if (prof && prof.url) {
         window.open(prof.url, '_blank');
@@ -1134,31 +1163,35 @@ export class PaddockRoom {
       return;
     }
 
-    // Bottom CRT Monitor Clicks (3 Left Icons)
-    if (objName === 'PADDOCK_CRT_SCREEN') {
+    // 4. Stage 3B: Focused on Bottom CRT Monitor ONLY
+    if (this.stage === 'bottom_monitor' && objName === 'PADDOCK_CRT_SCREEN') {
       const u = uv.x;
       const v = uv.y;
 
-      // Left sidebar: u < 0.14
-      if (u < 0.14) {
-        // 1st Icon (Top): LinkedIn (v >= 0.70)
+      // Left Icon Sidebar: u < 0.15
+      if (u < 0.15) {
+        // Icon 1 (Top): LinkedIn (v >= 0.70)
         if (v >= 0.70) {
           window.open('https://www.linkedin.com/in/aryanshriv/', '_blank');
           return;
         }
 
-        // 2nd Icon (Middle): GitHub (v between 0.35 and 0.70)
+        // Icon 2 (Middle): GitHub (v between 0.35 and 0.70)
         if (v >= 0.35 && v < 0.70) {
           window.open('https://github.com/Aryan-Shrivastva', '_blank');
           return;
         }
 
-        // 3rd Icon (Bottom): X / Twitter (v < 0.35)
+        // Icon 3 (Bottom): X / Twitter (v < 0.35)
         if (v < 0.35) {
           window.open('https://x.com/aryanshriv09', '_blank');
           return;
         }
       }
+
+      // Clicking right side or background returns to Desk View
+      this.zoomIntoDesk();
+      return;
     }
   }
 }
