@@ -24,6 +24,7 @@ export class CameraController {
     // Chase Camera Smoothing
     this.chaseTargetPos = new THREE.Vector3();
     this.chaseTargetLookAt = new THREE.Vector3();
+    this.paddockTargetLookAt = new THREE.Vector3(0, 104, -3.7);
 
     this.setupOrbitListeners();
   }
@@ -142,44 +143,39 @@ export class CameraController {
       this.camera.fov = 55 + Math.min((currentSpeed * 3.6) / 350, 1.0) * 12;
       this.camera.updateProjectionMatrix();
     }
-    else if (this.mode === 'paddock_overview') {
-      // Stage 1: PADDOCK TRUCK CUTAWAY OVERVIEW (MATCHING IMAGE 2)
-      this.camera.position.set(0.4, 103.8, 4.4);
-      this.camera.lookAt(new THREE.Vector3(0.1, 103.8, -1.8));
-      this.camera.fov = 46;
-      this.camera.updateProjectionMatrix();
-    }
-    else if (this.mode === 'paddock_desk') {
-      // Stage 2: DIRECT DESK WORKSTATION (MATCHING IMAGE 3)
-      this.camera.position.set(-0.05, 104.3, 0.45);
-      this.camera.lookAt(new THREE.Vector3(-0.05, 104.4, -3.7));
-      this.camera.fov = 56;
-      this.camera.updateProjectionMatrix();
-    }
-    else if (this.mode === 'paddock_top_monitor') {
-      // Stage 3A: FULL-SCREEN TOP MONITOR ONLY
-      this.camera.position.set(-0.05, 106.0, -1.75);
-      this.camera.lookAt(new THREE.Vector3(-0.05, 105.7, -3.6));
-      this.camera.fov = 40;
-      this.camera.updateProjectionMatrix();
-    }
-    else if (this.mode === 'paddock_bottom_monitor') {
-      // Stage 3B: FULL-SCREEN BOTTOM MONITOR ONLY
-      this.camera.position.set(-0.05, 103.4, -1.6);
-      this.camera.lookAt(new THREE.Vector3(-0.05, 103.4, -3.7));
-      this.camera.fov = 42;
-      this.camera.updateProjectionMatrix();
+    else if (this.mode.startsWith('paddock')) {
+      // PADDOCK MODES (LookAt target driven smoothly by GSAP)
+      this.camera.lookAt(this.paddockTargetLookAt);
     }
   }
 
   transitionToPaddockOverview(callback) {
     this.mode = 'paddock_overview';
+    gsap.killTweensOf(this.camera.position);
+    gsap.killTweensOf(this.paddockTargetLookAt);
+    gsap.killTweensOf(this.camera);
+
     gsap.to(this.camera.position, {
       x: 0.4,
       y: 103.8,
       z: 4.4,
-      duration: 1.0,
-      ease: 'power3.inOut',
+      duration: 0.9,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.paddockTargetLookAt, {
+      x: 0.1,
+      y: 103.8,
+      z: -1.8,
+      duration: 0.9,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.camera, {
+      fov: 46,
+      duration: 0.9,
+      ease: 'power3.out',
+      onUpdate: () => this.camera.updateProjectionMatrix(),
       onComplete: () => {
         if (callback) callback();
       }
@@ -188,12 +184,31 @@ export class CameraController {
 
   transitionToPaddockDesk(callback) {
     this.mode = 'paddock_desk';
+    gsap.killTweensOf(this.camera.position);
+    gsap.killTweensOf(this.paddockTargetLookAt);
+    gsap.killTweensOf(this.camera);
+
     gsap.to(this.camera.position, {
       x: -0.05,
       y: 104.3,
       z: 0.45,
-      duration: 0.9,
-      ease: 'power3.inOut',
+      duration: 0.8,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.paddockTargetLookAt, {
+      x: -0.05,
+      y: 104.4,
+      z: -3.7,
+      duration: 0.8,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.camera, {
+      fov: 56,
+      duration: 0.8,
+      ease: 'power3.out',
+      onUpdate: () => this.camera.updateProjectionMatrix(),
       onComplete: () => {
         if (callback) callback();
       }
@@ -202,12 +217,32 @@ export class CameraController {
 
   transitionToPaddockTopMonitor(callback) {
     this.mode = 'paddock_top_monitor';
+    gsap.killTweensOf(this.camera.position);
+    gsap.killTweensOf(this.paddockTargetLookAt);
+    gsap.killTweensOf(this.camera);
+
+    // Zoom directly in front of the top monitor
     gsap.to(this.camera.position, {
       x: -0.05,
-      y: 106.0,
-      z: -1.75,
-      duration: 0.8,
-      ease: 'power3.inOut',
+      y: 105.9,
+      z: -1.55,
+      duration: 0.75,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.paddockTargetLookAt, {
+      x: -0.05,
+      y: 105.7,
+      z: -3.6,
+      duration: 0.75,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.camera, {
+      fov: 38,
+      duration: 0.75,
+      ease: 'power3.out',
+      onUpdate: () => this.camera.updateProjectionMatrix(),
       onComplete: () => {
         if (callback) callback();
       }
@@ -216,12 +251,32 @@ export class CameraController {
 
   transitionToPaddockBottomMonitor(callback) {
     this.mode = 'paddock_bottom_monitor';
+    gsap.killTweensOf(this.camera.position);
+    gsap.killTweensOf(this.paddockTargetLookAt);
+    gsap.killTweensOf(this.camera);
+
+    // Zoom directly in front of the CRT monitor
     gsap.to(this.camera.position, {
       x: -0.05,
       y: 103.4,
-      z: -1.6,
-      duration: 0.8,
-      ease: 'power3.inOut',
+      z: -1.4,
+      duration: 0.75,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.paddockTargetLookAt, {
+      x: -0.05,
+      y: 103.4,
+      z: -3.7,
+      duration: 0.75,
+      ease: 'power3.out'
+    });
+
+    gsap.to(this.camera, {
+      fov: 42,
+      duration: 0.75,
+      ease: 'power3.out',
+      onUpdate: () => this.camera.updateProjectionMatrix(),
       onComplete: () => {
         if (callback) callback();
       }

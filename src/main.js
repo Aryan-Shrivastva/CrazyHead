@@ -621,10 +621,10 @@ class F1PortfolioApp {
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
       if (this.gameState === 'paddock') {
-        if (this.paddockRoom && this.paddockRoom.interactiveObjects) {
-          const hits = this.raycaster.intersectObjects(this.paddockRoom.interactiveObjects, true);
+        if (this.paddockRoom) {
+          const hits = this.raycaster.intersectObjects(this.paddockRoom.group.children, true);
           if (hits.length > 0) {
-            this.paddockRoom.handleScreenClick(hits[0]);
+            this.paddockRoom.handleGlobalClick(hits);
           }
         }
       } else if (this.gameState === 'racing') {

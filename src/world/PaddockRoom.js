@@ -578,6 +578,7 @@ export class PaddockRoom {
 
     this.group.add(topMonGroup);
 
+    this.topMonGroup = topMonGroup;
     screenMesh.name = 'PADDOCK_TOP_SCREEN';
     this.interactiveObjects.push(screenMesh);
   }
@@ -841,6 +842,7 @@ export class PaddockRoom {
 
     this.group.add(crtGroup);
 
+    this.crtGroup = crtGroup;
     screenMesh.name = 'PADDOCK_CRT_SCREEN';
     this.interactiveObjects.push(screenMesh);
   }
@@ -1082,6 +1084,13 @@ export class PaddockRoom {
     }
   }
 
+  zoomIntoDesk() {
+    this.stage = 'desk';
+    if (this.cameraController) {
+      this.cameraController.transitionToPaddockDesk();
+    }
+  }
+
   zoomIntoTopMonitor() {
     this.stage = 'top_monitor';
     if (this.cameraController) {
@@ -1106,92 +1115,99 @@ export class PaddockRoom {
     this.renderTopMonitor();
   }
 
-  handleScreenClick(intersect) {
-    if (!intersect || !intersect.object) return;
-    const objName = intersect.object.name;
-    const uv = intersect.uv;
+  handleGlobalClick(hits) {
+    if (!hits || hits.length === 0) return;
 
-    // 1. Stage 1: Truck Overview -> Click anywhere on workstation zooms to Desk
-    if (this.stage === 'overview') {
-      this.zoomIntoDesk();
-      return;
-    }
+    for (let hit of hits) {
+      let cur = hit.object;
+      let isTop = false;
+      let isBottom = false;
+      let isEngineer = false;
 
-    // 2. Stage 2: Desk View -> Click on Top Screen zooms into Top Monitor ONLY; Click on CRT zooms into Bottom Monitor ONLY
-    if (this.stage === 'desk') {
-      if (objName === 'PADDOCK_TOP_SCREEN') {
-        this.zoomIntoTopMonitor();
-        return;
-      }
-      if (objName === 'PADDOCK_CRT_SCREEN') {
-        this.zoomIntoBottomMonitor();
-        return;
-      }
-      return;
-    }
-
-    if (!uv) return;
-
-    // 3. Stage 3A: Focused on Top Monitor ONLY
-    if (this.stage === 'top_monitor' && objName === 'PADDOCK_TOP_SCREEN') {
-      const u = uv.x;
-      const v = uv.y;
-
-      // [ PREVIOUS ] Button (top-left: u < 0.20, v > 0.82)
-      if (u < 0.20 && v > 0.82) {
-        this.prevProfile();
-        return;
+      while (cur && cur !== this.group) {
+        if (cur === this.topMonGroup || cur.name === 'PADDOCK_TOP_SCREEN') {
+          isTop = true;
+          break;
+        }
+        if (cur === this.crtGroup || cur.name === 'PADDOCK_CRT_SCREEN') {
+          isBottom = true;
+          break;
+        }
+        if (cur === this.engineerGroup || cur.name === 'PADDOCK_ENGINEER_CLICK') {
+          isEngineer = true;
+          break;
+        }
+        cur = cur.parent;
       }
 
-      // [ NEXT ] Button (top-right: u > 0.80, v > 0.82)
-      if (u > 0.80 && v > 0.82) {
-        this.nextProfile();
-        return;
+      if (isTop) {
+        if (this.stage !== 'top_monitor') {
+          this.zoomIntoTopMonitor();
+          return;
+        } else {
+          // Already in top_monitor -> handle navigation or links
+          const uv = hit.uv;
+          if (uv) {
+            const u = uv.x;
+            const v = uv.y;
+
+            if (u < 0.20 && v > 0.82) {
+              this.prevProfile();
+              return;
+            }
+            if (u > 0.80 && v > 0.82) {
+              this.nextProfile();
+              return;
+            }
+            if (u > 0.78 && v < 0.20) {
+              this.zoomIntoDesk();
+              return;
+            }
+            const prof = this.profiles[this.currentProfileIndex];
+            if (prof && prof.url) {
+              window.open(prof.url, '_blank');
+            }
+          }
+          return;
+        }
       }
 
-      // [ GO BACK ] Button (bottom-right: u > 0.78, v < 0.20)
-      if (u > 0.78 && v < 0.20) {
+      if (isBottom) {
+        if (this.stage !== 'bottom_monitor') {
+          this.zoomIntoBottomMonitor();
+          return;
+        } else {
+          // Already in bottom_monitor -> handle social icons
+          const uv = hit.uv;
+          if (uv && uv.x < 0.15) {
+            if (uv.y >= 0.70) {
+              window.open('https://www.linkedin.com/in/aryanshriv/', '_blank');
+              return;
+            }
+            if (uv.y >= 0.35 && uv.y < 0.70) {
+              window.open('https://github.com/Aryan-Shrivastva', '_blank');
+              return;
+            }
+            if (uv.y < 0.35) {
+              window.open('https://x.com/aryanshriv09', '_blank');
+              return;
+            }
+          }
+          this.zoomIntoDesk();
+          return;
+        }
+      }
+
+      if (isEngineer || this.stage === 'overview') {
         this.zoomIntoDesk();
         return;
       }
-
-      // Clicking main content area opens the active coding profile
-      const prof = this.profiles[this.currentProfileIndex];
-      if (prof && prof.url) {
-        window.open(prof.url, '_blank');
-      }
-      return;
     }
+  }
 
-    // 4. Stage 3B: Focused on Bottom CRT Monitor ONLY
-    if (this.stage === 'bottom_monitor' && objName === 'PADDOCK_CRT_SCREEN') {
-      const u = uv.x;
-      const v = uv.y;
-
-      // Left Icon Sidebar: u < 0.15
-      if (u < 0.15) {
-        // Icon 1 (Top): LinkedIn (v >= 0.70)
-        if (v >= 0.70) {
-          window.open('https://www.linkedin.com/in/aryanshriv/', '_blank');
-          return;
-        }
-
-        // Icon 2 (Middle): GitHub (v between 0.35 and 0.70)
-        if (v >= 0.35 && v < 0.70) {
-          window.open('https://github.com/Aryan-Shrivastva', '_blank');
-          return;
-        }
-
-        // Icon 3 (Bottom): X / Twitter (v < 0.35)
-        if (v < 0.35) {
-          window.open('https://x.com/aryanshriv09', '_blank');
-          return;
-        }
-      }
-
-      // Clicking right side or background returns to Desk View
-      this.zoomIntoDesk();
-      return;
+  handleScreenClick(intersect) {
+    if (intersect) {
+      this.handleGlobalClick([intersect]);
     }
   }
 }
