@@ -95,13 +95,13 @@ class F1PortfolioApp {
   setupThreeScene() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x06080C);
-    this.scene.fog = new THREE.FogExp2(0x06080C, 0.001);
+    this.scene.fog = new THREE.FogExp2(0x06080C, 0.0008);
 
     this.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      3000
+      3500
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -323,7 +323,7 @@ class F1PortfolioApp {
     this.selectedTeam = team;
     this.selectedDriver = driver;
     this.gameState = 'racing';
-    this.isLaunchAllowed = false; // Locked on grid until lights turn green!
+    this.isLaunchAllowed = false;
 
     if (this.driver1Char) this.driver1Char.group.visible = false;
     if (this.driver2Char) this.driver2Char.group.visible = false;
@@ -333,12 +333,12 @@ class F1PortfolioApp {
     const playerSlotIndex = 2; // P3 Grid Box
     this.gridManager.buildGrid(team, driver, playerSlotIndex);
 
-    // 2. Position Player Car in designated grid box
+    // 2. Position Player Car on ground level in designated grid box
     const slot = this.gridManager.getPlayerGridSlot(playerSlotIndex);
-    this.physics.resetPosition(slot.x, slot.y, slot.z, slot.heading);
+    this.physics.resetPosition(slot.x, 0, slot.z, slot.heading);
     this.f1Car.repairAllDamage();
-    this.f1Car.group.position.copy(this.physics.position);
-    this.f1Car.group.rotation.y = this.physics.heading;
+    this.f1Car.group.position.set(slot.x, 0, slot.z);
+    this.f1Car.group.rotation.set(0, slot.heading, 0);
 
     // 3. Switch camera directly to first-person Cockpit view
     this.cameraController.setMode('cockpit');
@@ -388,10 +388,9 @@ class F1PortfolioApp {
       } else {
         clearInterval(interval);
 
-        // Random pause between 1.0s and 2.0s with revving engines
-        const randomDelay = 1000 + Math.random() * 1000;
+        const randomDelay = 1000 + Math.random() * 800;
         setTimeout(() => {
-          // 5 RED LIGHTS TURN GREEN! ALL CARS LAUNCH!
+          // 5 RED LIGHTS TURN GREEN!
           lightPods.forEach(p => {
             if (p) {
               p.classList.remove('red-on');
@@ -416,7 +415,6 @@ class F1PortfolioApp {
 
           this.telemetryHUD.showRadioMessage(`"Lights out, push to pass, ${driver.name}!"`);
 
-          // Hide gantry after 2.5 seconds
           setTimeout(() => {
             gantryEl.classList.add('hidden');
           }, 2500);
@@ -426,12 +424,16 @@ class F1PortfolioApp {
   }
 
   handleCarCollision(hitZone, impactDir, aiCar) {
+    if (!this.isLaunchAllowed) return; // Don't trigger during pre-race grid formation
+    const currentSpeed = this.physics.velocity.length();
+    if (currentSpeed < 3.0) return; // Ignore slight stationary touches
+
     const now = Date.now();
-    if (now - this.lastCollisionTime < 600) return; // Debounce rapid hits
+    if (now - this.lastCollisionTime < 700) return;
     this.lastCollisionTime = now;
 
-    // Apply physical bounce impulse
-    this.physics.applyCollisionImpulse(impactDir, 1.2);
+    // Apply horizontal impulse
+    this.physics.applyCollisionImpulse(impactDir, 0.8);
 
     // Trigger visual component damage
     const brokenPart = this.f1Car.triggerDamage(hitZone);
@@ -439,10 +441,8 @@ class F1PortfolioApp {
       this.physics.frontWingDamaged = true;
     }
 
-    // Play collision sound
     this.soundManager.playGearShiftSound();
 
-    // Show HUD damage warning banner
     const warnBanner = document.getElementById('damage-warning-banner');
     const warnText = document.getElementById('damage-text');
     if (warnBanner && warnText) {
@@ -461,8 +461,6 @@ class F1PortfolioApp {
         warnBanner.classList.add('hidden');
       }, 3500);
     }
-
-    this.telemetryHUD.showRadioMessage('"Caution, bodywork contact detected!"', 2500);
   }
 
   openPaddock() {
@@ -516,7 +514,7 @@ class F1PortfolioApp {
     const nearest = this.monzaTrack.getNearestTrackPoint(this.physics.position);
     if (nearest && nearest.point) {
       const heading = Math.atan2(nearest.tangent.x, nearest.tangent.z);
-      this.physics.resetPosition(nearest.point.x, 0.05, nearest.point.z, heading);
+      this.physics.resetPosition(nearest.point.x, 0, nearest.point.z, heading);
       this.telemetryHUD.showRadioMessage('"Car reset to track limits."');
     }
   }
@@ -609,7 +607,6 @@ class F1PortfolioApp {
     const dt = this.clock.getDelta();
 
     if (this.gameState === 'racing') {
-      // 1. Process Inputs (Throttle only active after 5 red lights turn green!)
       let throttle = (this.isLaunchAllowed && this.keys.forward) ? 1 : 0;
       let brake = this.keys.backward ? 1 : 0;
       let steer = 0;
@@ -619,13 +616,12 @@ class F1PortfolioApp {
       this.physics.setInputs(throttle, brake, steer, this.keys.boost);
       this.physics.update(dt, this.soundManager);
 
-      // 2. Synchronize Player 3D Car with chassis roll in corners
-      this.f1Car.group.position.copy(this.physics.position);
+      // Lock car firmly to ground surface
+      this.f1Car.group.position.set(this.physics.position.x, 0, this.physics.position.z);
       this.f1Car.group.rotation.y = this.physics.heading;
       this.f1Car.group.rotation.z = this.physics.rollAngle;
       this.f1Car.group.rotation.x = this.physics.pitchAngle;
 
-      // 3. Update Steering Screen & Wheel
       const speedKmH = this.physics.velocity.length() * 3.6;
       const rpmRatio = (this.physics.rpm - this.physics.idleRpm) / (this.physics.maxRpm - this.physics.idleRpm);
       this.f1Car.update(this.physics.currentSteer, speedKmH / 300, this.physics.isDrsOpen);
@@ -637,15 +633,12 @@ class F1PortfolioApp {
         this.physics.engineMode
       );
 
-      // 4. Update 19 AI Cars & Detect Collisions with Player Car
       this.gridManager.update(dt, this.physics, (hitZone, impactDir, aiCar) => {
         this.handleCarCollision(hitZone, impactDir, aiCar);
       });
 
-      // 5. Update Telemetry HUD
       this.telemetryHUD.update(this.physics, this.monzaTrack);
 
-      // 6. Sunlight follows car
       this.dirLight.position.set(
         this.physics.position.x + 80,
         150,
