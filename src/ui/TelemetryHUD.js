@@ -182,6 +182,7 @@ export class TelemetryHUD {
     // Detect lap completion (Crossing from u > 0.90 to u < 0.10)
     if (this.prevPlayerProgress > 0.90 && playerU < 0.10) {
       this.playerLapsCompleted++;
+      physics.onLapComplete();
 
       const elapsedLapSeconds = (Date.now() - this.lapStartTime) / 1000;
       this.lastLapTime = elapsedLapSeconds;

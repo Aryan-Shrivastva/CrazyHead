@@ -100,12 +100,9 @@ export class VehiclePhysics {
     this.updateGears(speedKmH, soundManager);
 
     // 5. ERS BATTERY & ENGINE FORCE
-    if (this.isOvertakeActive && this.throttle > 0.5) {
+    if (this.isOvertakeActive && this.throttle > 0.5 && this.battery > 0) {
       this.battery = Math.max(0, this.battery - dt * 6.5);
       this.engineMode = 'OVERTAKE';
-    } else if (this.brake > 0.2) {
-      this.battery = Math.min(100, this.battery + dt * 12.0);
-      this.engineMode = 'HARVESTING';
     } else {
       this.engineMode = 'BALANCED';
     }
@@ -117,9 +114,20 @@ export class VehiclePhysics {
 
     let forwardForce = 0;
     if (this.throttle > 0) {
-      const topSpeedCap = this.isDrsOpen ? this.maxSpeed * 1.05 : this.maxSpeed;
+      let topSpeedCap;
+      if (this.isOvertakeActive && this.battery > 0) {
+        topSpeedCap = this.isDrsOpen ? this.maxSpeed * 1.05 : this.maxSpeed;
+      } else {
+        topSpeedCap = 310 / 3.6; // Cap at 310 km/h without battery
+      }
+      
       const speedCapRatio = Math.min(currentSpeed / topSpeedCap, 1.0);
-      forwardForce = this.throttle * enginePower * (1.0 - speedCapRatio * 0.5);
+      
+      if (currentSpeed > topSpeedCap && !(this.isOvertakeActive && this.battery > 0)) {
+        forwardForce = 0; // Cut throttle if exceeding normal top speed without battery
+      } else {
+        forwardForce = this.throttle * enginePower * (1.0 - speedCapRatio * 0.5);
+      }
     }
 
     let brakeForce = 0;
@@ -211,6 +219,10 @@ export class VehiclePhysics {
     if (this.throttle === 0 && speedKmH < 5) {
       this.rpm = this.idleRpm + Math.sin(Date.now() * 0.008) * 150;
     }
+  }
+
+  onLapComplete() {
+    this.battery = Math.min(100.0, this.battery + 50.0);
   }
 
   resetPosition(x = 0, y = 0, z = 0, heading = 0) {
