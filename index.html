@@ -14,10 +14,29 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+  <!-- ================= INITIAL LOADING SCREEN ================= -->
+  <div id="initial-loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="truck-animation-wrapper">
+        <svg class="truck-svg" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 10,38 Q 15,32 20,38 Z" fill="#000" class="smoke smoke-1" />
+          <path d="M 15,38 Q 20,30 25,38 Z" fill="#000" class="smoke smoke-2" />
+          <path d="M 22,10 L 52,10 L 55,14 L 55,38 L 22,38 Z" fill="#000"/> <!-- Trailer -->
+          <path d="M 55,18 L 66,20 L 70,38 L 55,38 Z" fill="#000"/> <!-- Cabin -->
+          <polygon points="57,22 65,23 66,28 57,28" fill="#FFF"/> <!-- Window -->
+          <circle cx="32" cy="38" r="4" fill="#000"/> <!-- Wheel 1 -->
+          <circle cx="63" cy="38" r="4" fill="#000"/> <!-- Wheel 2 -->
+        </svg>
+        <div class="loading-platform">
+          <div class="loading-progress-bar" id="loading-progress-bar"></div>
+        </div>
+        <div class="loading-text" id="loading-text">0% Loading...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- 3D Canvas -->
   <canvas id="webgl-canvas"></canvas>
-
-  <!-- Ambient Glow Backdrop for Showroom -->
   <div id="showroom-ambient-waves" class="showroom-ambient-waves"></div>
 
   <!-- Top Left: Return to Homepage Button (Visible in Paddock Mode) -->
@@ -344,6 +363,41 @@
       <div class="finish-actions">
         <button id="finish-paddock-btn" class="finish-btn highlight">ENTER ARYAN'S PADDOCK ➔</button>
         <button id="finish-restart-btn" class="finish-btn">RACE AGAIN / LOBBY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PAUSE MODAL (ESC KEY IN RACE) ================= -->
+  <div id="pause-modal" class="screen-overlay hidden pause-modal-overlay">
+    <div class="pause-card">
+      <div class="pause-header-badge">⏸️ RACE PAUSED</div>
+      <h2 class="pause-title">FORMULA 1 MONZA GRAND PRIX</h2>
+      <p class="pause-subtitle">Race physics and telemetry are paused. Choose an option to continue:</p>
+
+      <div class="pause-telemetry-row">
+        <div class="pause-stat">
+          <span class="pstat-label">CURRENT POSITION</span>
+          <span class="pstat-val" id="pause-pos-val">P1 / 20</span>
+        </div>
+        <div class="pause-stat">
+          <span class="pstat-label">RACE PROGRESS</span>
+          <span class="pstat-val" id="pause-lap-val">LAP 1 / 5</span>
+        </div>
+        <div class="pause-stat">
+          <span class="pstat-label">TIRE COMPOUND</span>
+          <span class="pstat-val" id="pause-tire-val">SOFT</span>
+        </div>
+      </div>
+
+      <div class="pause-actions">
+        <button id="resume-race-btn" class="pause-btn continue">
+          <span class="pbtn-icon">▶</span>
+          <span>CONTINUE RACE</span>
+        </button>
+        <button id="exit-to-home-btn" class="pause-btn exit">
+          <span class="pbtn-icon">🏠</span>
+          <span>EXIT TO HOME</span>
+        </button>
       </div>
     </div>
   </div>

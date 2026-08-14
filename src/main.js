@@ -60,6 +60,7 @@ class F1PortfolioApp {
 
     // Pitstop State
     this.selectedTireCompound = 'SOFT';
+    this.isPaused = false;
 
     // Raycaster for 3D Interactions
     this.raycaster = new THREE.Raycaster();
@@ -83,6 +84,7 @@ class F1PortfolioApp {
     this.buildWorld();
     this.setupUI();
     this.setupPitStopUI();
+    this.setupPauseUI();
     this.setupInputListeners();
     this.setupSoundToggle();
 
@@ -296,6 +298,62 @@ class F1PortfolioApp {
       confirmPitBtn.addEventListener('click', () => {
         this.executePitStop();
       });
+    }
+  }
+
+  setupPauseUI() {
+    const resumeBtn = document.getElementById('resume-race-btn');
+    const exitHomeBtn = document.getElementById('exit-to-home-btn');
+
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', () => {
+        this.resumeRace();
+      });
+    }
+
+    if (exitHomeBtn) {
+      exitHomeBtn.addEventListener('click', () => {
+        this.resumeRace();
+        this.returnToLobby();
+      });
+    }
+  }
+
+  togglePause() {
+    if (this.isPaused) {
+      this.resumeRace();
+    } else {
+      this.pauseRace();
+    }
+  }
+
+  pauseRace() {
+    if (this.gameState !== 'racing') return;
+    this.isPaused = true;
+    this.soundManager.stopEngine();
+
+    const pauseModal = document.getElementById('pause-modal');
+    if (pauseModal) {
+      const posEl = document.getElementById('pause-pos-val');
+      if (posEl) posEl.textContent = `P${this.telemetryHUD?.leaderboardPosition || 1} / 20`;
+
+      const lapEl = document.getElementById('pause-lap-val');
+      if (lapEl) lapEl.textContent = `LAP ${this.monzaTrack?.currentLap || 1} / 5`;
+
+      const tireEl = document.getElementById('pause-tire-val');
+      if (tireEl) tireEl.textContent = this.selectedTireCompound || 'SOFT';
+
+      pauseModal.classList.remove('hidden');
+      pauseModal.classList.add('active');
+    }
+  }
+
+  resumeRace() {
+    this.isPaused = false;
+    const pauseModal = document.getElementById('pause-modal');
+    if (pauseModal) {
+      pauseModal.classList.remove('active');
+      pauseModal.classList.add('hidden');
     }
   }
 
@@ -616,6 +674,11 @@ class F1PortfolioApp {
       if (key === 'r' && this.gameState === 'racing') {
         this.resetCarToTrack();
       }
+      if (key === 'escape') {
+        if (this.gameState === 'racing') {
+          this.togglePause();
+        }
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -689,43 +752,45 @@ class F1PortfolioApp {
     const dt = this.clock.getDelta();
 
     if (this.gameState === 'racing') {
-      let throttle = (this.isLaunchAllowed && this.keys.forward) ? 1 : 0;
-      let brake = this.keys.backward ? 1 : 0;
-      let steer = 0;
-      if (this.keys.left) steer += 1;
-      if (this.keys.right) steer -= 1;
+      if (!this.isPaused) {
+        let throttle = (this.isLaunchAllowed && this.keys.forward) ? 1 : 0;
+        let brake = this.keys.backward ? 1 : 0;
+        let steer = 0;
+        if (this.keys.left) steer += 1;
+        if (this.keys.right) steer -= 1;
 
-      this.physics.setInputs(throttle, brake, steer, this.keys.boost);
-      this.physics.update(dt, this.soundManager);
+        this.physics.setInputs(throttle, brake, steer, this.keys.boost);
+        this.physics.update(dt, this.soundManager);
 
-      // Car strictly on ground
-      this.f1Car.group.position.set(this.physics.position.x, 0, this.physics.position.z);
-      this.f1Car.group.rotation.y = this.physics.heading;
-      this.f1Car.group.rotation.z = this.physics.rollAngle;
-      this.f1Car.group.rotation.x = this.physics.pitchAngle;
+        // Car strictly on ground
+        this.f1Car.group.position.set(this.physics.position.x, 0, this.physics.position.z);
+        this.f1Car.group.rotation.y = this.physics.heading;
+        this.f1Car.group.rotation.z = this.physics.rollAngle;
+        this.f1Car.group.rotation.x = this.physics.pitchAngle;
 
-      const speedKmH = this.physics.velocity.length() * 3.6;
-      const rpmRatio = (this.physics.rpm - this.physics.idleRpm) / (this.physics.maxRpm - this.physics.idleRpm);
-      this.f1Car.update(this.physics.currentSteer, speedKmH / 300, this.physics.isDrsOpen);
-      this.f1Car.updateSteeringScreen(
-        speedKmH,
-        this.physics.gear === 0 ? 'N' : this.physics.gear,
-        this.physics.battery,
-        rpmRatio,
-        this.physics.engineMode
-      );
+        const speedKmH = this.physics.velocity.length() * 3.6;
+        const rpmRatio = (this.physics.rpm - this.physics.idleRpm) / (this.physics.maxRpm - this.physics.idleRpm);
+        this.f1Car.update(this.physics.currentSteer, speedKmH / 300, this.physics.isDrsOpen);
+        this.f1Car.updateSteeringScreen(
+          speedKmH,
+          this.physics.gear === 0 ? 'N' : this.physics.gear,
+          this.physics.battery,
+          rpmRatio,
+          this.physics.engineMode
+        );
 
-      // Update AI Cars with balanced pace
-      this.gridManager.update(dt);
+        // Update AI Cars with balanced pace
+        this.gridManager.update(dt);
 
-      this.telemetryHUD.update(this.physics, this.monzaTrack, this.gridManager);
+        this.telemetryHUD.update(this.physics, this.monzaTrack, this.gridManager);
 
-      this.dirLight.position.set(
-        this.physics.position.x + 80,
-        150,
-        this.physics.position.z + 60
-      );
-      this.dirLight.target = this.f1Car.group;
+        this.dirLight.position.set(
+          this.physics.position.x + 80,
+          150,
+          this.physics.position.z + 60
+        );
+        this.dirLight.target = this.f1Car.group;
+      }
     }
 
     this.cameraController.update(this.f1Car.group, this.physics, dt);
@@ -734,5 +799,46 @@ class F1PortfolioApp {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new F1PortfolioApp();
+  const loadingScreen = document.getElementById('initial-loading-screen');
+  const loadingText = document.getElementById('loading-text');
+  const loadingBar = document.getElementById('loading-progress-bar');
+  
+  if (!loadingScreen || !loadingText || !loadingBar) {
+    new F1PortfolioApp();
+    return;
+  }
+
+  let progress = 0;
+  const duration = 2500; // 2.5 seconds loading
+  const intervalTime = 30;
+  const increment = (100 / (duration / intervalTime));
+
+  const loadingInterval = setInterval(() => {
+    progress += increment;
+    
+    if (Math.random() > 0.8) {
+      progress += Math.random() * 5;
+    }
+    
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(loadingInterval);
+      
+      loadingText.textContent = `100% Loading...`;
+      loadingBar.style.width = `100%`;
+      
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        new F1PortfolioApp();
+        
+        setTimeout(() => {
+          loadingScreen.remove();
+        }, 500);
+      }, 300);
+      return;
+    }
+    
+    loadingText.textContent = `${Math.floor(progress)}% Loading...`;
+    loadingBar.style.width = `${progress}%`;
+  }, intervalTime);
 });
